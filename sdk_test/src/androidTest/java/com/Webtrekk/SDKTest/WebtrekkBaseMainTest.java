@@ -124,7 +124,7 @@ public class WebtrekkBaseMainTest extends WebtrekkBaseSDKTest {
 
     private void processWaitForURL(StopListenForURLCallback callback)
     {
-        WebtrekkLogging.log("start wait process with iterator/hasNext" + (mIterator == null ? "null" : "mIterator.hasNext()"));
+        WebtrekkLogging.log("start wait process with iterator/hasNext" + (mIterator == null ? "null" : mIterator.hasNext()));
         while (mIterator != null && mIterator.hasNext()){
             final String url = mIterator.next();
             if (!url.equals(TIMEOUT)) {
