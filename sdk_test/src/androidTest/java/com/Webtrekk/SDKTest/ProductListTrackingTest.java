@@ -512,7 +512,7 @@ public class ProductListTrackingTest extends WebtrekkBaseMainTest {
     }
 
     @Test
-    public void savingPositionToHardMemory(){
+    public void savingPositionToMemory(){
         mEmptyActivity.launchActivity(null);
         ProductListTracker productListTracker = Webtrekk.getInstance().getProductListTracker();
 
