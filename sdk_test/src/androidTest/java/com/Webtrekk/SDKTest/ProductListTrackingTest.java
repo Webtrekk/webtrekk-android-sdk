@@ -19,6 +19,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -433,7 +434,6 @@ public class ProductListTrackingTest extends WebtrekkBaseMainTest {
             RecyclerView recyclerView = mActivityRule.getActivity().getRecyclerView();
             LinearLayoutManager linearLayoutManager = (LinearLayoutManager)recyclerView.getLayoutManager();
             Set<Integer> positionsTracked = new HashSet<>();
-            sleep(1000);
             onView(withId(R.id.productListRecyclerView)).perform(swipeUp());
             sleep(4000);
             addToHash(linearLayoutManager.findFirstCompletelyVisibleItemPosition(),
@@ -497,12 +497,16 @@ public class ProductListTrackingTest extends WebtrekkBaseMainTest {
             }
 
             //positions
-            assertTrue(positionsResult.containsAll(positionsTracked) && positionsTracked.containsAll(positionsResult));
+            assertTrue("tracked by SDK:"+ getFlatString(positionsResult) + "should be"+getFlatString(positionsTracked),
+                    positionsResult.containsAll(positionsTracked) && positionsTracked.containsAll(positionsResult));
             //cost
-            assertTrue(costResult.containsAll(costTracked) && costTracked.containsAll(costResult));
+            assertTrue("tracked by SDK:"+ getFlatString(costResult) + "should be"+getFlatString(costTracked),
+                    costResult.containsAll(costTracked) && costTracked.containsAll(costResult));
             //ecom
-            assertTrue(ecom1Result.containsAll(ecom1Tracked) && ecom1Tracked.containsAll(ecom1Result));
-            assertTrue(ecom2Result.containsAll(ecom2Tracked) && ecom2Tracked.containsAll(ecom2Result));
+            assertTrue("tracked by SDK:"+ getFlatString(ecom1Result) + "should be"+getFlatString(ecom1Tracked),
+                    ecom1Result.containsAll(ecom1Tracked) && ecom1Tracked.containsAll(ecom1Result));
+            assertTrue("tracked by SDK:"+ getFlatString(ecom2Result) + "should be"+getFlatString(ecom2Tracked),
+                    ecom2Result.containsAll(ecom2Tracked) && ecom2Tracked.containsAll(ecom2Result));
 
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -597,5 +601,9 @@ public class ProductListTrackingTest extends WebtrekkBaseMainTest {
             toSet.add(Float.valueOf(value));
         }
         return toSet;
+    }
+
+    private <T> String getFlatString(Collection<T> collection){
+       return Arrays.toString(collection.toArray());
     }
 }
