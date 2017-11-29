@@ -127,9 +127,10 @@ public class WebtrekkBaseMainTest extends WebtrekkBaseSDKTest {
         WebtrekkLogging.log("start wait process with iterator/hasNext" + (mIterator == null ? "null" : mIterator.hasNext()));
         while (mIterator != null && mIterator.hasNext()){
             final String url = mIterator.next();
+            WebtrekkLogging.log("url received: " + url);
             if (!url.equals(TIMEOUT)) {
                 if (mIsNoTrackCheck){
-                    assertEquals(false, "url received in no track mode");
+                    assertTrue("url received in no track mode",false);
                 } else {
                     mSentURLArray.add(url);
                 }
@@ -156,6 +157,7 @@ public class WebtrekkBaseMainTest extends WebtrekkBaseSDKTest {
                 .onErrorReturn(new Function<Throwable, String>() {
                     @Override
                     public String apply(@NonNull Throwable throwable) throws Exception {
+                        WebtrekkLogging.log("Error waiting for request:" + throwable.toString());
                         assertEquals("track receive error",
                                 mIsNoTrackCheck ? 0 : mStringNumbersToWait, mSentURLArray.size());
                         return TIMEOUT;
