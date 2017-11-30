@@ -66,7 +66,7 @@ public class ProductListTrackingTest extends WebtrekkBaseMainTest {
     @Before
     public void before() throws Exception {
         super.before();
-        mWaitMilliseconds = 5000;
+        mWaitMilliseconds = 10000;
         initWT();
     }
 
@@ -414,7 +414,7 @@ public class ProductListTrackingTest extends WebtrekkBaseMainTest {
     public void integrationWithRecyclingViewSendOnFirstPageTest(){
         mActivityRule.launchActivity(null);
         try {
-            sleep(2100);
+            sleep(4100);
             initWaitingForTrack(null);
             mActivityRule.getActivity().unregisterTracking();
 
@@ -435,7 +435,7 @@ public class ProductListTrackingTest extends WebtrekkBaseMainTest {
             LinearLayoutManager linearLayoutManager = (LinearLayoutManager)recyclerView.getLayoutManager();
             Set<Integer> positionsTracked = new HashSet<>();
             onView(withId(R.id.productListRecyclerView)).perform(swipeUp());
-            sleep(4000);
+            sleep(5000);
             addToHash(linearLayoutManager.findFirstCompletelyVisibleItemPosition(),
                     linearLayoutManager.findLastCompletelyVisibleItemPosition(), positionsTracked);
 
@@ -443,7 +443,7 @@ public class ProductListTrackingTest extends WebtrekkBaseMainTest {
             sleep(1000);
 
             onView(withId(R.id.productListRecyclerView)).perform(swipeUp());
-            sleep(4000);
+            sleep(5000);
 
             final int lastItem = linearLayoutManager.findLastCompletelyVisibleItemPosition();
             addToHash(linearLayoutManager.findFirstCompletelyVisibleItemPosition(),

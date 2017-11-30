@@ -73,7 +73,7 @@ class ProductListActivity : AppCompatActivity(){
         super.onStart()
         val webtrekk = Webtrekk.getInstance()
 
-        webtrekk.productListTracker.registerView(productListRecyclerView){ position ->
+        webtrekk.productListTracker.registerView(productListRecyclerView, 4000){ position ->
             val item = model.getList().value!!.get(position)
             val builder = ProductParameterBuilder(item.id, ProductParameterBuilder.ActionType.list)
 
