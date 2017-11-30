@@ -36,6 +36,7 @@ import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.Webtrekk.SDKTest.ProductList.ProductListActivity;
 import com.webtrekk.webtrekksdk.Utils.WebtrekkLogging;
 import com.webtrekk.webtrekksdk.Webtrekk;
 import com.mixpanel.android.mpmetrics.MixpanelAPI;
@@ -197,6 +198,12 @@ public class MainActivity extends Activity {
         Intent intent = new Intent(this, RecommendationActivity.class);
         intent.putExtra(RecommendationActivity.RECOMMENDATION_NAME, "complexReco");
         intent.putExtra(RecommendationActivity.RECOMMENDATION_PRODUCT_ID, "085cc2g007");
+        startActivity(intent);
+    }
+
+    public void productList(View view)
+    {
+        Intent intent = new Intent(this, ProductListActivity.class);
         startActivity(intent);
     }
 

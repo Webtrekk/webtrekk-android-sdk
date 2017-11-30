@@ -649,8 +649,8 @@ public class RequestFactory {
      * @return true if send is done and false if previous send is still in progress or there is no message to send
      */
     public boolean onSendIntervalOver() {
-        WebtrekkLogging.log("onSendIntervalOver: request urls: " + mRequestUrlStore.size()
-                + " thread done:"+(mRequestProcessorFuture == null ? "null": mRequestProcessorFuture.isDone()));
+        //WebtrekkLogging.log("onSendIntervalOver: request urls: " + mRequestUrlStore.size()
+                //+ " thread done:"+(mRequestProcessorFuture == null ? "null": mRequestProcessorFuture.isDone()));
         if(mRequestUrlStore.size() > 0  && (mRequestProcessorFuture == null || mRequestProcessorFuture.isDone())) {
             if (mExecutorService == null) {
                 // use daemon thread.

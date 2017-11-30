@@ -58,7 +58,7 @@ public class WebtrekkBaseSDKTest extends Assert implements WebtrekkTestRule.Test
 
         //super.setUp();
         //refresh webtrekk instance
-        mSDKManager.setup();
+        setupWTInstance();
         mApplication = getApplication();
         if (!mIsErrorHandlerTest)
             deleteErrorHandlerFile(mApplication);
@@ -80,8 +80,16 @@ public class WebtrekkBaseSDKTest extends Assert implements WebtrekkTestRule.Test
     }
 
     public void after() throws Exception {
-        mSDKManager.release(mApplication);
+        releaseWTInstance();
         releaseWakeUp();
+    }
+
+    protected void setupWTInstance(){
+        mSDKManager.setup();
+    }
+
+    protected void releaseWTInstance(){
+        mSDKManager.release(mApplication);
     }
 
     private void setupWakeUp(){

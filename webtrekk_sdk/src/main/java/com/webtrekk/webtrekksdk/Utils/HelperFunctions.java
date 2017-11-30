@@ -38,8 +38,6 @@ import android.util.Log;
 import android.util.Patterns;
 import android.view.WindowManager;
 
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GoogleApiAvailability;
 import com.webtrekk.webtrekksdk.Request.RequestProcessor;
 import com.webtrekk.webtrekksdk.Webtrekk;
 
@@ -672,12 +670,6 @@ final public class HelperFunctions {
         }
 
         return retStr;
-    }
-
-    public static boolean isGooglePlayAvailable(Context context) {
-        GoogleApiAvailability apiAvailability = GoogleApiAvailability.getInstance();
-        int resultCode = apiAvailability.isGooglePlayServicesAvailable(context);
-        return (resultCode == ConnectionResult.SUCCESS);
     }
 
     public static boolean testIsValidURL(String url)

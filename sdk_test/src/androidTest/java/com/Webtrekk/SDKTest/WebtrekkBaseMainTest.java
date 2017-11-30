@@ -50,6 +50,11 @@ public class WebtrekkBaseMainTest extends WebtrekkBaseSDKTest {
     private boolean mIsNoTrackCheck;
     static final private String TIMEOUT = "TIMEOUT";
 
+    interface StopListenForURLCallback{
+        boolean stop(String url);
+    }
+
+
     @Override
     public void before() throws Exception {
         super.before();
@@ -103,26 +108,39 @@ public class WebtrekkBaseMainTest extends WebtrekkBaseSDKTest {
 
     final protected String waitForTrackedURL()
     {
-        processWaitForURL();
+        processWaitForURL(null);
         return mIsNoTrackCheck ? null : mSentURLArray.get(0);
     }
 
-    final protected List<String> waitForTrackedURLs()
+    final protected List<String> waitForTrackedURLs(){
+        return waitForTrackedURLs(null);
+    }
+
+    final protected List<String> waitForTrackedURLs(StopListenForURLCallback callback)
     {
-        processWaitForURL();
+        processWaitForURL(callback);
         return mSentURLArray;
     }
 
-    private void processWaitForURL()
+    private void processWaitForURL(StopListenForURLCallback callback)
     {
         while (mIterator != null && mIterator.hasNext()){
             final String url = mIterator.next();
             if (!url.equals(TIMEOUT)) {
-                mSentURLArray.add(url);
+                if (mIsNoTrackCheck){
+                    assertTrue("url received in no track mode",false);
+                } else {
+                    mSentURLArray.add(url);
+                }
             } else { // timeout
                 mIterator = null;
             }
-            if (mStringNumbersToWait == mSentURLArray.size()){
+            if (callback != null)
+            {
+                if (callback.stop(url)) {
+                    break;
+                }
+            }else  if (mStringNumbersToWait == mSentURLArray.size()){
                 break;
             }
         }
@@ -137,7 +155,9 @@ public class WebtrekkBaseMainTest extends WebtrekkBaseSDKTest {
                 .onErrorReturn(new Function<Throwable, String>() {
                     @Override
                     public String apply(@NonNull Throwable throwable) throws Exception {
-                        assertEquals(mIsNoTrackCheck ? 0 : mStringNumbersToWait, mSentURLArray.size());
+                        WebtrekkLogging.log("Error waiting for request:" + throwable.toString());
+                        assertEquals("track receive error",
+                                mIsNoTrackCheck ? 0 : mStringNumbersToWait, mSentURLArray.size());
                         return TIMEOUT;
                     }
                 }).blockingIterable().iterator();

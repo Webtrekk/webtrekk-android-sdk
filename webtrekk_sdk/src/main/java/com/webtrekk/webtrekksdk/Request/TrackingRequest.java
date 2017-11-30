@@ -19,6 +19,8 @@
 package com.webtrekk.webtrekksdk.Request;
 
 
+import android.support.annotation.NonNull;
+
 import java.util.Map;
 import java.util.SortedMap;
 
@@ -41,6 +43,7 @@ public class TrackingRequest {
     final private TrackingConfiguration mTrackingConfiguration;
     final private RequestType mRequestType;
     private RequestType mMergedRequestType;
+    private int mRequestSize;
 
     public enum RequestType
     {
@@ -85,13 +88,42 @@ public class TrackingRequest {
     }
 
     /**
+     * add to size base part size
+     */
+    private int getBasePartSize(){
+        return 5 + mTrackingConfiguration.getTrackDomain().length()
+                + mTrackingConfiguration.getTrackId().length();
+    }
+
+    private interface ProcessNotNullParameters{
+        void process(@NonNull String key, @NonNull String value, boolean addAmp);
+    }
+
+    /**
      * add to url bufer parameters defined in keys array with appropriate value in trackingParameters.
      * @param trackingParameter
      * @param url
      * @param keys
      */
-    private void addParametersArray(TrackingParameter trackingParameter, StringBuffer url, Parameter keys[],
-                                    boolean isAmpToFirstParameter)
+    private void addParametersArray(@NonNull TrackingParameter trackingParameter, @NonNull final StringBuffer url,
+                                    @NonNull Parameter keys[], boolean isAmpToFirstParameter){
+        processThroughParametersArray(trackingParameter, keys, isAmpToFirstParameter, new ProcessNotNullParameters() {
+            @Override
+            public void process(@NonNull String key, @NonNull String value, boolean addAmp) {
+                url.append((addAmp ? "&" : "") + key.toString() + "=" + HelperFunctions.urlEncode(value));
+            }
+        });
+    }
+
+    /**
+     * iterate throu all not null parameters Array
+     * @param trackingParameter
+     * @param keys
+     * @param isAmpToFirstParameter
+     * @param process
+     */
+    private void processThroughParametersArray(TrackingParameter trackingParameter, Parameter keys[],
+                                    boolean isAmpToFirstParameter, ProcessNotNullParameters process)
     {
         SortedMap<Parameter, String> tp = trackingParameter.getDefaultParameter();
         boolean isAmp = isAmpToFirstParameter;
@@ -99,13 +131,28 @@ public class TrackingRequest {
         for (Parameter key:keys)
         {
             if(trackingParameter.containsKey(key) && tp.get(key) != null && !tp.get(key).isEmpty()) {
-                url.append((isAmp ? "&" : "") + key.toString() + "=" + HelperFunctions.urlEncode(tp.get(key)));
+                process.process(key.toString(), tp.get(key), isAmp);
 
                 if (!isAmp) {
                     isAmp = true;
                 }
             }
         }
+    }
+
+    /**
+     * return size of string for this parameters part. Need to maintain 8 Kb limit
+     * @param trackingParameter
+     * @param keys
+     * @return
+     */
+    private void updateParametersArraySize(TrackingParameter trackingParameter, Parameter keys[]){
+        processThroughParametersArray(trackingParameter, keys, true, new ProcessNotNullParameters() {
+            @Override
+            public void process(@NonNull String key, @NonNull String value, boolean addAmp) {
+                mRequestSize += (addAmp ? 1 : 0) + key.toString().length() + 1 + HelperFunctions.urlEncode(value).length();
+            }
+        });
     }
 
     /**
@@ -119,20 +166,57 @@ public class TrackingRequest {
         addParametersArray(trackingParameter, url, keys, true);
     }
 
+
+    private interface ProcessNotNullMapParameters{
+        void process(@NonNull String key, @NonNull String value);
+    }
+
     /**
      * fills url buffer with parameters defined in key/value map. Add sufix to each parameter name
      * @param map
      * @param sufix
      * @param url
      */
-    private void addKeyMap(SortedMap<String, String> map, String sufix, StringBuffer url)
+    private void addKeyMap(@NonNull SortedMap<String, String> map,
+                           @NonNull final String sufix, @NonNull final StringBuffer url)
     {
+        processKeyMap(map, new ProcessNotNullMapParameters() {
+            @Override
+            public void process(@NonNull String key, @NonNull String value) {
+                url.append(sufix + key.toString() + "=" + HelperFunctions.urlEncode(value));
+            }
+        });
+    }
+
+    /**
+     * process not null parameters for parameters map
+     * @param map
+     * @param process
+     */
+    private void processKeyMap(@NonNull SortedMap<String, String> map,
+                               @NonNull ProcessNotNullMapParameters process){
         if (!map.isEmpty()) {
             for (Map.Entry<String, String> entry : map.entrySet()) {
                 if (entry.getValue() != null && !entry.getValue().isEmpty())
-                   url.append(sufix + entry.getKey().toString() + "=" + HelperFunctions.urlEncode(entry.getValue()));
+                    process.process(entry.getKey().toString(), entry.getValue());
             }
         }
+    }
+
+    /**
+     * update size for parameter map
+     * @param map
+     * @param suffixSize
+     */
+    private void updateMapParametersSize(@NonNull SortedMap<String, String> map,
+                                         @NonNull final int suffixSize){
+        processKeyMap(map, new ProcessNotNullMapParameters() {
+            @Override
+            public void process(@NonNull String key, @NonNull String value) {
+                mRequestSize += suffixSize + key.length() + 1 + HelperFunctions.urlEncode(value).length();
+            }
+        });
+
     }
 
     /**
@@ -144,6 +228,16 @@ public class TrackingRequest {
         void getTrackingPart(TrackingParameter trackingParameter, StringBuffer url);
         String getBasePart();
         boolean isEORAppend();
+    }
+
+    /**
+     * this is interface for classes-factories that generate URL parameters.
+     */
+    private interface URLSizeCalculationFactory
+    {
+        int getPValueSize(TrackingParameter trackingParameter);
+        void updateTrackingPartSize(TrackingParameter trackingParameter);
+        int getBasePartSize();
     }
 
     /**
@@ -209,16 +303,19 @@ public class TrackingRequest {
     }
 
 
-    private class GeneralRequest implements URLFactory
+    private class GeneralRequest implements URLFactory, URLSizeCalculationFactory
     {
         // arrays of all keys for General request
         private final Parameter KEYZ[] = {Parameter.EVERID, Parameter.ADVERTISER_ID, Parameter.FORCE_NEW_SESSION,
         Parameter.APP_FIRST_START, Parameter.CURRENT_TIME, Parameter.TIMEZONE, Parameter.DEV_LANG, Parameter.CUSTOMER_ID,
         Parameter.ACTION_NAME, Parameter.ORDER_TOTAL, Parameter.ORDER_NUMBER, Parameter.PRODUCT, Parameter.PRODUCT_COST,
-        Parameter.CURRENCY, Parameter.PRODUCT_COUNT, Parameter.PRODUCT_STATUS, Parameter.VOUCHER_VALUE, Parameter.ADVERTISEMENT,
-        Parameter.ADVERTISEMENT_ACTION, Parameter.INTERN_SEARCH, Parameter.EMAIL, Parameter.EMAIL_RID, Parameter.NEWSLETTER,
-        Parameter.GNAME, Parameter.SNAME, Parameter.PHONE, Parameter.GENDER, Parameter.BIRTHDAY, Parameter.CITY, Parameter.COUNTRY,
-        Parameter.ZIP, Parameter.STREET, Parameter.STREETNUMBER, Parameter.MEDIA_FILE, Parameter.MEDIA_ACTION,
+        Parameter.CURRENCY, Parameter.PRODUCT_COUNT, Parameter.PRODUCT_STATUS, Parameter.PRODUCT_POSITION,
+        Parameter.PRODUCT_PAYMENT_METHOD, Parameter.PRODUCT_SHIPPING_SERVICE, Parameter.PRODUCT_SHIPPING_SPEED,
+        Parameter.PRODUCT_SHIPPING_COST, Parameter.PRODUCT_GROSS_MARGIN, Parameter.PRODUCT_ORDER_STATUS,
+        Parameter.PRODUCT_VARIANT, Parameter.PRODUCT_COUPON, Parameter.PRODUCT_SOLD_OUT, Parameter.VOUCHER_VALUE,
+        Parameter.ADVERTISEMENT, Parameter.ADVERTISEMENT_ACTION, Parameter.INTERN_SEARCH, Parameter.EMAIL, Parameter.EMAIL_RID,
+        Parameter.NEWSLETTER, Parameter.GNAME, Parameter.SNAME, Parameter.PHONE, Parameter.GENDER, Parameter.BIRTHDAY, Parameter.CITY,
+        Parameter.COUNTRY, Parameter.ZIP, Parameter.STREET, Parameter.STREETNUMBER, Parameter.MEDIA_FILE, Parameter.MEDIA_ACTION,
         Parameter.MEDIA_POS, Parameter.MEDIA_LENGTH, Parameter.MEDIA_BANDWITH, Parameter.MEDIA_VOLUME,
         Parameter.MEDIA_MUTED, Parameter.MEDIA_TIMESTAMP, Parameter.SAMPLING, Parameter.IP_ADDRESS, Parameter.USERAGENT,
         Parameter.PAGE_URL};
@@ -241,6 +338,16 @@ public class TrackingRequest {
                     tp.get(Parameter.TIMESTAMP) + ",0,0,0";
         }
 
+
+        //As parameters in P parameter might be not defined try just define it with padding.
+        @Override
+        public int getPValueSize(TrackingParameter trackingParameter) {
+            // assume it is max size of P parameter.
+            return 200;
+        }
+
+
+
         /**
          * Fills url buffer based on tracking parameters. use some help function.
          * @param trackingParameter
@@ -252,31 +359,31 @@ public class TrackingRequest {
             addParametersArray(trackingParameter, url, KEYZ);
 
             //if ecom trackingParameter are given, append them to the url as well
-            addKeyMap(trackingParameter.getEcomParameter(), "&cb", url);
+            addKeyMap(trackingParameter.getEcomParameter(), "&"+ Parameter.ECOM, url);
 
             //if ad trackingParameter are given, append them to the url as well
-            addKeyMap(trackingParameter.getAdParameter(), "&cc", url);
+            addKeyMap(trackingParameter.getAdParameter(), "&" + Parameter.AD, url);
 
             //if action trackingParameter are given, append them to the url as well
-            addKeyMap(trackingParameter.getPageParameter(), "&cp", url);
+            addKeyMap(trackingParameter.getPageParameter(), "&" + Parameter.PAGE, url);
 
             //if session trackingParameter are given, append them to the url as well
-            addKeyMap(trackingParameter.getSessionParameter(), "&cs", url);
+            addKeyMap(trackingParameter.getSessionParameter(), "&" + Parameter.SESSION, url);
 
             //if action trackingParameter are given, append them to the url as well
-            addKeyMap(trackingParameter.getActionParameter(), "&ck", url);
+            addKeyMap(trackingParameter.getActionParameter(), "&" + Parameter.ACTION, url);
 
             //if product category trackingParameter are given, append them to the url as well
-            addKeyMap(trackingParameter.getProductCategories(), "&ca", url);
+            addKeyMap(trackingParameter.getProductCategories(), "&" + Parameter.PRODUCT_CAT, url);
 
             //if page category trackingParameter are given, append them to the url as well
-            addKeyMap(trackingParameter.getPageCategories(), "&cg", url);
+            addKeyMap(trackingParameter.getPageCategories(), "&" + Parameter.PAGE_CAT, url);
 
             //if user category trackingParameter are given, append them to the url as well
-            addKeyMap(trackingParameter.getUserCategories(), "&uc", url);
+            addKeyMap(trackingParameter.getUserCategories(), "&" + Parameter.USER_CAT, url);
 
             //if media category trackingParameter are given, append them to the url as well
-            addKeyMap(trackingParameter.getMediaCategories(), "&mg", url);
+            addKeyMap(trackingParameter.getMediaCategories(), "&" + Parameter.MEDIA_CAT, url);
         }
 
         @Override
@@ -287,6 +394,52 @@ public class TrackingRequest {
         @Override
         public boolean isEORAppend() {
             return true;
+        }
+
+        @Override
+        public void updateTrackingPartSize(TrackingParameter trackingParameter) {
+            updateParametersArraySize(trackingParameter, KEYZ);
+
+            //if ecom trackingParameter are given, append them to the url as well
+            updateMapParametersSize(trackingParameter.getEcomParameter(),
+                    Parameter.ECOM.toString().length()+1);
+
+            //if ad trackingParameter are given, append them to the url as well
+            updateMapParametersSize(trackingParameter.getAdParameter(),
+                    Parameter.AD.toString().length()+1);
+
+            //if action trackingParameter are given, append them to the url as well
+            updateMapParametersSize(trackingParameter.getPageParameter(),
+                    Parameter.PAGE.toString().length()+1);
+
+            //if session trackingParameter are given, append them to the url as well
+            updateMapParametersSize(trackingParameter.getSessionParameter(),
+                    Parameter.SESSION.toString().length()+1);
+
+            //if action trackingParameter are given, append them to the url as well
+            updateMapParametersSize(trackingParameter.getActionParameter(),
+                    Parameter.ACTION.toString().length()+1);
+
+            //if product category trackingParameter are given, append them to the url as well
+            updateMapParametersSize(trackingParameter.getProductCategories(),
+                    Parameter.PRODUCT_CAT.toString().length()+1);
+
+            //if page category trackingParameter are given, append them to the url as well
+            updateMapParametersSize(trackingParameter.getPageCategories(),
+                    Parameter.PAGE_CAT.toString().length()+1);
+
+            //if user category trackingParameter are given, append them to the url as well
+            updateMapParametersSize(trackingParameter.getUserCategories(),
+                    Parameter.USER_CAT.toString().length()+1);
+
+            //if media category trackingParameter are given, append them to the url as well
+            updateMapParametersSize(trackingParameter.getMediaCategories(),
+                    Parameter.MEDIA_CAT.toString().length()+1);
+        }
+
+        @Override
+        public int getBasePartSize() {
+            return TrackingRequest.this.getBasePartSize();
         }
     }
 
@@ -411,5 +564,21 @@ public class TrackingRequest {
 
     public TrackingConfiguration getTrackingConfiguration() {
         return mTrackingConfiguration;
+    }
+
+    /**
+     * return url size.
+     * @return size of url
+     */
+    public int getRequestSize(){
+        if (mRequestType == RequestType.GENERAL) {
+            URLSizeCalculationFactory request = new GeneralRequest();
+            mRequestSize = request.getBasePartSize();
+            mRequestSize += request.getPValueSize(mTrackingParameter);
+            request.updateTrackingPartSize(mTrackingParameter);
+            return mRequestSize;
+        } else {
+            return -1;
+        }
     }
 }

@@ -18,21 +18,10 @@
 
 package com.Webtrekk.SDKTest;
 
-import android.app.Activity;
-import android.content.Intent;
-import android.graphics.Rect;
-import android.support.test.espresso.action.EspressoKey;
-import android.support.test.espresso.action.KeyEventAction;
-import android.support.test.espresso.action.ViewActions;
-import android.support.test.espresso.matcher.ViewMatchers;
 import android.support.test.filters.LargeTest;
-import android.view.View;
 
 import com.webtrekk.webtrekksdk.Webtrekk;
 
-import org.hamcrest.Description;
-import org.hamcrest.Matcher;
-import org.hamcrest.TypeSafeMatcher;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -42,9 +31,8 @@ import org.junit.runner.RunWith;
 import static android.support.test.espresso.Espresso.onView;
 import static android.support.test.espresso.Espresso.pressBack;
 import static android.support.test.espresso.action.ViewActions.click;
-import static android.support.test.espresso.matcher.ViewMatchers.isRoot;
-import static android.support.test.espresso.matcher.ViewMatchers.withEffectiveVisibility;
 import static android.support.test.espresso.matcher.ViewMatchers.withId;
+
 
 @RunWith(WebtrekkClassRunner.class)
 @LargeTest

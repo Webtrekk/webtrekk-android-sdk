@@ -65,6 +65,14 @@
             android:onClick="adClearTest" />
 
         <Button
+            android:id="@+id/show_productList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Show Product List"
+            android:layout_gravity="center_horizontal"
+            android:onClick="productList" />
+
+        <Button
             android:id="@+id/show_webview"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

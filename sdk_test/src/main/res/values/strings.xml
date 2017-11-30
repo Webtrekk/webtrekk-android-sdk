@@ -8,4 +8,8 @@
     <string name="title_activity_media">MediaActivity</string>
     <string name="title_activity_CDB">CDBActivity</string>
     <string name="loading_video">loading video</string>
+    <string name="product_view">View</string>
+    <string name="product_add">Add</string>
+    <string name="product_conf">Conf</string>
+    <string name="product_clear_basket">Clear Basket</string>
 </resources>

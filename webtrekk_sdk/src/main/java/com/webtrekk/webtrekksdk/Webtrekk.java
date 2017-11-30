@@ -67,6 +67,7 @@ public class Webtrekk implements ActivityListener.Callback {
     //Current status of activities
     private ActivityListener mActivityStatus;
     final private ExceptionHandler mExceptionHandler = new ExceptionHandler();
+    private ProductListTracker mProductListTracker;
     private boolean mIsInitialized;
 
 
@@ -157,6 +158,8 @@ public class Webtrekk implements ActivityListener.Callback {
         //TODO: make sure this can not break
         //Application act = (Application) mContext.getApplicationContext();
         mExceptionHandler.init(mRequestFactory, mContext);
+
+        mProductListTracker = new ProductListTracker(trackingConfiguration, mContext);
 
 
         WebtrekkLogging.log("requestUrlStore created: max requests - " + trackingConfiguration.getMaxRequests());
@@ -320,7 +323,7 @@ public class Webtrekk implements ActivityListener.Callback {
 
     /**
      * @deprecated
-     * Don't call this function. If you need override page name call {@link Webtrekk#setCustomPageName(String)}} instead
+     * Don't call this function. If you need override page name call {@link Webtrekk#setCustomPageName(String)} instead
      * @param currentActivityName
      */
     public void setCurrentActivityName(String currentActivityName) {
@@ -614,6 +617,11 @@ public class Webtrekk implements ActivityListener.Callback {
     public WebtrekkRecommendations getRecommendations()
     {
         return new WebtrekkRecommendations(trackingConfiguration, mContext);
+    }
+
+
+    public ProductListTracker getProductListTracker(){
+        return mProductListTracker;
     }
 
     /**

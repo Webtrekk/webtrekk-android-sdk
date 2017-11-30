@@ -18,6 +18,7 @@
 
 package com.Webtrekk.SDKTest;
 
+import com.webtrekk.webtrekksdk.Utils.HelperFunctions;
 import com.webtrekk.webtrekksdk.Utils.WebtrekkLogging;
 
 import java.util.HashMap;
@@ -56,5 +57,10 @@ public class URLParsel
     public String getValue(String key)
     {
         return  mMap.get(key);
+    }
+
+    public String getDecodedValue(String key)
+    {
+        return HelperFunctions.urlDecode(getValue(key));
     }
 }
