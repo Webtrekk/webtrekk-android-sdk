@@ -124,17 +124,13 @@ public class WebtrekkBaseMainTest extends WebtrekkBaseSDKTest {
 
     private void processWaitForURL(StopListenForURLCallback callback)
     {
-        WebtrekkLogging.log("start wait process with iterator/hasNext" + (mIterator == null ? "null" : mIterator.hasNext()));
         while (mIterator != null && mIterator.hasNext()){
-            WebtrekkLogging.log("start wait for url.");
             final String url = mIterator.next();
-            WebtrekkLogging.log("url received: " + url);
             if (!url.equals(TIMEOUT)) {
                 if (mIsNoTrackCheck){
                     assertTrue("url received in no track mode",false);
                 } else {
                     mSentURLArray.add(url);
-                    WebtrekkLogging.log("add url to array. size is "+ mSentURLArray.size());
                 }
             } else { // timeout
                 mIterator = null;
