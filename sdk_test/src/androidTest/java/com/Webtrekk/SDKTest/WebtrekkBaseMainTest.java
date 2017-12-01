@@ -134,6 +134,7 @@ public class WebtrekkBaseMainTest extends WebtrekkBaseSDKTest {
                 }
             } else { // timeout
                 mIterator = null;
+                continue;
             }
             if (callback != null)
             {
