@@ -31,6 +31,9 @@ import com.webtrekk.webtrekksdk.Utils.HelperFunctions;
 import com.webtrekk.webtrekksdk.Utils.WebtrekkLogging;
 import com.webtrekk.webtrekksdk.Webtrekk;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 
 /**
  * this class contains the tracking event and the trackingparams, and handles the creation of an url string
@@ -44,6 +47,9 @@ public class TrackingRequest {
     final private RequestType mRequestType;
     private RequestType mMergedRequestType;
     private int mRequestSize;
+
+    private static String JSON_PARAMETER_KEY = "Parameter";
+    private static String JSON_REQUEST_TYPE_KEY = "request_type";
 
     public enum RequestType
     {
@@ -580,5 +586,23 @@ public class TrackingRequest {
         } else {
             return -1;
         }
+    }
+
+    @NonNull
+    JSONObject saveToJson() throws JSONException {
+        final JSONObject jsonObject = new JSONObject();
+        final JSONObject parameter = mTrackingParameter.saveToJson();
+        jsonObject.put(JSON_PARAMETER_KEY, parameter);
+        jsonObject.put(JSON_REQUEST_TYPE_KEY, mRequestType.ordinal());
+        return jsonObject;
+    }
+
+    @NonNull
+    static public TrackingRequest createFromJson(JSONObject jsonObject,
+              @NonNull TrackingConfiguration trackingConfiguration) throws JSONException {
+        final int type = jsonObject.getInt(TrackingRequest.JSON_REQUEST_TYPE_KEY);
+        final JSONObject parameterJson = (JSONObject) jsonObject.get(TrackingRequest.JSON_PARAMETER_KEY);
+        TrackingParameter parameter = TrackingParameter.createFromJson(parameterJson);
+        return new TrackingRequest(parameter, trackingConfiguration, RequestType.values()[type]);
     }
 }

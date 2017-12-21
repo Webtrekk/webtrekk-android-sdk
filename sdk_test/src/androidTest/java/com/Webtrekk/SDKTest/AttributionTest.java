@@ -49,6 +49,7 @@ public class AttributionTest extends WebtrekkBaseSDKTest {
     volatile String mAdvID;
     private Context mContext;
     volatile boolean mNotifierDone;
+    volatile boolean postInstallSendResult;
     final Object mWaiter = new Object();
     final String MEDIA_CODE = "MEDIA_CODE";
 
@@ -259,6 +260,41 @@ public class AttributionTest extends WebtrekkBaseSDKTest {
             }
 
         }
+    }
+
+    @Test
+    public void sendPostBack(){
+        if (!mIsExternalCall)
+            return;
+
+        Webtrekk.getInstance().initWebtrekk(mApplication);
+        final PostInstallSender sender = new PostInstallSender(getApplication().getApplicationContext());
+
+        sender.send(MEDIA_CODE, new PostInstallSender.CompleteNotifier() {
+            @Override
+            public void complete(boolean isSuccessful) {
+                mNotifierDone = true;
+                postInstallSendResult = isSuccessful;
+
+                synchronized (mWaiter)
+                {
+                    mWaiter.notifyAll();
+                }
+
+            }
+        });
+
+        synchronized (mWaiter) {
+            while (!mNotifierDone)
+                try {
+                    mWaiter.wait();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+        }
+
+        assertTrue(postInstallSendResult);
+
     }
 
     @Test

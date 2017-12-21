@@ -21,6 +21,7 @@ package com.webtrekk.webtrekksdk.Modules;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.support.annotation.IntRange;
 import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.JsonReader;
@@ -60,9 +61,12 @@ public class Campaign extends Thread
     private static final String ADV_ID = "INSTALL_SETTINGS_ADV_ID";
     private static final String MEDIA_CODE = "INSTALL_SETTINGS_MEDIA_CODE";
     private static final String OPT_OUT = "INSTALL_SETTINGS_OPT_OUT";
-    private static final String FIRST_START_INITIATED = "FIRST_START_INITIATED";
+    private static final String FIRST_START_INITIATED = "FIRST_START_INITIATED";//old flag need to support old settings
+    private static final String FIRST_START_INITIATED_TIME = "FIRST_START_INITIATED_TIME";//old flag need to support old settings
     private static final String CAMPAIGN_MEDIA_CODE_DEFINED_MESSAGE = "com.Webtrekk.CampainMediaMessage";
     private static final String CAMPAIGN_PROCESS_FINISHED = "CAMPAIGN_PROCESS_FINISHED";
+    private static final long CAMPAIGN_ANALIZE_TIMEOUT = 60000;
+    private static final long CAMPAIGN_ANALIZE_PERIOD = 20000;
 
 
     Campaign(Context context, String trackID, boolean isFirstStart, boolean isAutoTrackAdvID, boolean enableCampaign) {
@@ -294,7 +298,7 @@ public class Campaign extends Thread
     {
         RequestProcessor requestProcessor = new RequestProcessor(null);
 
-        TrackingParameter tp = new TrackingParameter();
+        final TrackingParameter tp = new TrackingParameter();
 
 
         tp.add(TrackingParameter.Parameter.INST_TRACK_ID, mTrackID);
@@ -309,67 +313,66 @@ public class Campaign extends Thread
             tp.add(TrackingParameter.Parameter.USERAGENT, userAgent);
 
         final TrackingRequest tr = new TrackingRequest(tp, null, TrackingRequest.RequestType.INSTALL);
+        final long finishTime = getFirstStartInitiatedTime(mContext) + Campaign.CAMPAIGN_ANALIZE_TIMEOUT;
 
-        try {
+        do {
+            try {
+                String installURL = tr.getUrlString();
+                WebtrekkLogging.log("Attempt to get media code with install url:" + installURL);
 
-            String installURL = tr.getUrlString();
-            WebtrekkLogging.log("Install URL:" + installURL);
+                requestProcessor.sendRequest(new URL(installURL), new RequestProcessor.ProcessOutputCallback() {
+                    @Override
+                    public void process(int statusCode, HttpURLConnection connection) {
+                        JsonReader jsonReader = null;
+                        String mediaCodeRaw = null;
+                        try {
 
-            requestProcessor.sendRequest(new URL(installURL), new RequestProcessor.ProcessOutputCallback() {
-                @Override
-                public void process(int statusCode, HttpURLConnection connection) {
-                    JsonReader jsonReader = null;
-                    String mediaCodeRaw = null;
-                    try
-                    {
+                            if (statusCode == 200) {
+                                InputStreamReader reader = new InputStreamReader(connection.getInputStream(), "UTF-8");
+                                jsonReader = new JsonReader(reader);
 
-                    if (statusCode == 200) {
-                        InputStreamReader reader = new InputStreamReader(connection.getInputStream(), "UTF-8");
-                        jsonReader = new JsonReader(reader);
+                                jsonReader.beginObject();
 
-                        jsonReader.beginObject();
+                                while (jsonReader.hasNext()) {
+                                    final String name = jsonReader.nextName();
+                                    if (name.equals("mediacode")) {
+                                        mediaCodeRaw = jsonReader.nextString();
+                                    } else
+                                        jsonReader.skipValue();
+                                }
 
-                        while (jsonReader.hasNext()) {
-                            final String name = jsonReader.nextName();
-                            if (name.equals("mediacode")) {
-                                mediaCodeRaw = jsonReader.nextString();
-                            }else
-                                jsonReader.skipValue();
-                        }
+                                jsonReader.endObject();
 
-                        jsonReader.endObject();
+                                if (mediaCodeRaw != null) {
+                                    WebtrekkLogging.log("Media code is received:" + mediaCodeRaw);
 
-                        if (mediaCodeRaw != null)
-                        {
-                            WebtrekkLogging.log("Media code is received:"+mediaCodeRaw);
-                            String mediaRawArray[] = mediaCodeRaw.split("=");
+                                    mMediaCode = mediaCodeRaw.substring(mediaCodeRaw.indexOf("=") + 1);
+                                } else
+                                    WebtrekkLogging.log("Media code isn't defined from response.");
+                            } else
+                                WebtrekkLogging.log("Install request failed with status code:" + statusCode);
+                        } catch (IOException e) {
+                            WebtrekkLogging.log("Incorrect install Get response:" + e.getMessage());
+                        } finally {
 
-                            mMediaCode = mediaCodeRaw.substring(mediaCodeRaw.indexOf("=")+1);
-                        }else
-                            WebtrekkLogging.log("Media code isn't defined from response.");
-                    }else
-                        WebtrekkLogging.log("Install request failed with status code:"+statusCode);
-                    } catch (IOException e) {
-                        WebtrekkLogging.log("Incorrect install Get response:"+e.getMessage());
-                    }
-                    finally{
-
-                        if (jsonReader != null) {
-                            try {
-                                jsonReader.close();
-                            } catch (IOException e) {
+                            if (jsonReader != null) {
+                                try {
+                                    jsonReader.close();
+                                } catch (IOException e) {
+                                }
                             }
                         }
+
                     }
+                });
+                sleep(Campaign.CAMPAIGN_ANALIZE_PERIOD);
 
-                }
-            });
-
-        } catch (MalformedURLException e) {
-            WebtrekkLogging.log("Error constructing INSTALL URL:" + e.getMessage());
-        } catch (InterruptedException e) {
-            WebtrekkLogging.log("Interruption exception error");
-        }
+            } catch(MalformedURLException e){
+                WebtrekkLogging.log("Error constructing INSTALL URL:" + e.getMessage());
+            } catch(InterruptedException e){
+                WebtrekkLogging.log("Interruption exception error");
+            }
+        }while (finishTime > System.currentTimeMillis() && mMediaCode == null);
 
         return  mMediaCode;
     }
@@ -398,7 +401,7 @@ public class Campaign extends Thread
     {
         SharedPreferences.Editor editor = HelperFunctions.getWebTrekkSharedPreference(mContext).edit();
 
-        editor.putBoolean(FIRST_START_INITIATED, true).apply();
+        editor.putLong(FIRST_START_INITIATED_TIME, System.currentTimeMillis()).apply();
     }
 
     private void finishProcessCampaign(@NonNull Context context){
@@ -427,12 +430,29 @@ public class Campaign extends Thread
     {
         SharedPreferences preferences = HelperFunctions.getWebTrekkSharedPreference(context);
 
-        boolean result = preferences.getBoolean(FIRST_START_INITIATED, false);
+        boolean isFirstStartOld = preferences.getBoolean(FIRST_START_INITIATED, false);
+        boolean isFirstStartTrue = preferences.getLong(FIRST_START_INITIATED_TIME, -1) > 0;
 
-        if (deleteFlag)
+
+        if (deleteFlag) {
             preferences.edit().remove(FIRST_START_INITIATED).apply();
+            preferences.edit().remove(FIRST_START_INITIATED_TIME).apply();
+        }
 
-        return result;
+        return isFirstStartOld | isFirstStartTrue;
+    }
+
+    /**
+     * {@hide}
+     * get time of start campaign processing
+     * @return
+     */
+    @IntRange(from=0)
+    public static long getFirstStartInitiatedTime(@NonNull Context context)
+    {
+        SharedPreferences preferences = HelperFunctions.getWebTrekkSharedPreference(context);
+
+        return preferences.getLong(FIRST_START_INITIATED_TIME, -1);
     }
 
     public static String getAdvId(@NonNull Context context)

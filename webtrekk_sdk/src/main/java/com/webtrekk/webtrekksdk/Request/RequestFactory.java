@@ -20,6 +20,7 @@ package com.webtrekk.webtrekksdk.Request;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.Handler;
 
 import com.webtrekk.webtrekksdk.Configuration.ActivityConfiguration;
 import com.webtrekk.webtrekksdk.Modules.AppinstallGoal;
@@ -32,6 +33,7 @@ import com.webtrekk.webtrekksdk.Utils.WebtrekkLogging;
 import com.webtrekk.webtrekksdk.Webtrekk;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -57,6 +59,8 @@ public class RequestFactory {
     private TrackingConfiguration mTrackingConfiguration;
     private volatile Campaign mCampaign;
     private final AppinstallGoal mAppinstallGoal = new AppinstallGoal();
+    TrackingRequestTemporaryStore mPendingRequestStore;
+    private static final long PENDING_INTERVAL = 30000;
 
     //additional customer params, this is a globally available HashMap
     //before the requests are sent, the keys of this HashMap are matched with the keys in the xml configuration or the global/
@@ -123,6 +127,7 @@ public class RequestFactory {
         mRequestUrlStore = new RequestUrlStore(mContext);
         mConstGlobalTrackingParameter = new TrackingParameter();
         mGlobalTrackingParameter = new TrackingParameter();
+        mPendingRequestStore = new TrackingRequestTemporaryStore(mContext, mTrackingConfiguration);
 
     }
 
@@ -402,25 +407,21 @@ public class RequestFactory {
      */
     private void processInstallGoals(TrackingRequest request)
     {
-        final boolean isCampaingProcessFinished = Campaign.isCampaignProcessingFinished(mContext);
 
-        if (isCampaingProcessFinished) {
+        if (mAppinstallGoal.isAppinstallGoal(mContext)){
+            request.mTrackingParameter.add(Parameter.ECOM, "900", "1");
+            mAppinstallGoal.finishAppinstallGoal(mContext);
+        }
 
-            if (mAppinstallGoal.isAppinstallGoal(mContext)){
-                request.mTrackingParameter.add(Parameter.ECOM, "900", "1");
-                mAppinstallGoal.finishAppinstallGoal(mContext);
-            }
+        final String mediaCode = Campaign.getMediaCode(mContext);
 
-            final String mediaCode = Campaign.getMediaCode(mContext);
-
-            if (mediaCode != null && !mediaCode.isEmpty()) {
-                request.mTrackingParameter.add(Parameter.ADVERTISEMENT, mediaCode);
-                request.mTrackingParameter.add(Parameter.ADVERTISEMENT_ACTION, "c");
-            } else {
-                String deepLinkMediaCode = HelperFunctions.getDeepLinkMediaCode(mContext, true);
-                if (deepLinkMediaCode != null && !deepLinkMediaCode.isEmpty()) {
-                    request.mTrackingParameter.add(Parameter.ADVERTISEMENT, deepLinkMediaCode);
-                }
+        if (mediaCode != null && !mediaCode.isEmpty()) {
+            request.mTrackingParameter.add(Parameter.ADVERTISEMENT, mediaCode);
+            request.mTrackingParameter.add(Parameter.ADVERTISEMENT_ACTION, "c");
+        } else {
+            String deepLinkMediaCode = HelperFunctions.getDeepLinkMediaCode(mContext, true);
+            if (deepLinkMediaCode != null && !deepLinkMediaCode.isEmpty()) {
+                request.mTrackingParameter.add(Parameter.ADVERTISEMENT, deepLinkMediaCode);
             }
         }
     }
@@ -580,13 +581,11 @@ public class RequestFactory {
      */
     public void addRequest(TrackingRequest request)  {
 
-        processInstallGoals(request);
-
-        // only track if not opted out
-        if(!mIsOptout && !mIsSampling) {
-            String urlString = request.getUrlString();
-            WebtrekkLogging.log("adding url: " + urlString);
-            mRequestUrlStore.addURL(urlString);
+        if (!isCampaignFinished()){
+            mPendingRequestStore.saveTrackingRequest(request);
+        } else {
+            sendPendingRequests();
+            addURL(request.getUrlString());
         }
 
         // after the url is created reset the internal parameters to zero
@@ -594,6 +593,35 @@ public class RequestFactory {
         mInternalParameter.add(Parameter.FORCE_NEW_SESSION, "0");
         mInternalParameter.add(Parameter.APP_FIRST_START, "0");
         mAutoCustomParameter.put("appUpdated", "0");
+    }
+
+    void addURL(String url){
+        // only track if not opted out
+        if(!mIsOptout && !mIsSampling) {
+            WebtrekkLogging.log("adding url: " + url);
+            mRequestUrlStore.addURL(url);
+        }
+    }
+
+    void sendPendingRequests(){
+        WebtrekkLogging.log("try to send pending requests");
+        if (isCampaignFinished() && !mPendingRequestStore.queueIsEmpty()){
+            WebtrekkLogging.log("sending pending requests");
+            List<TrackingRequest> requests = mPendingRequestStore.getAllSavedRequests();
+
+            if (!requests.isEmpty()){
+                processInstallGoals(requests.get(0));
+            }
+
+            for (TrackingRequest request:requests){
+                addURL(request.getUrlString());
+            }
+            mPendingRequestStore.deleteQueue();
+        }
+    }
+
+    private boolean isCampaignFinished(){
+        return Campaign.isCampaignProcessingFinished(mContext);
     }
 
     /**
