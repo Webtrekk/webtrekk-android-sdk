@@ -177,23 +177,9 @@ public class AttributionTest extends WebtrekkBaseSDKTest {
     {
         if (!mIsExternalCall)
             return;
-        Object notifier = new Object();
         mContext = getInstrumentation().getTargetContext();
 
-        new Thread(new AdvIDReader(notifier)).start();
-
-        synchronized (notifier)
-        {
-            try {
-                while (!mNotifierDone)
-                   notifier.wait();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-
-        assertNotNull(mAdvID);
-
+        readAdvID();
 
         File file = new File(getInstrumentation().getTargetContext().getFilesDir(), mAdvID+".adv");
 
@@ -204,6 +190,23 @@ public class AttributionTest extends WebtrekkBaseSDKTest {
         }
 
         Log.d(getClass().getName(), "Create advID file:" + file.getAbsolutePath());
+    }
+
+    private void readAdvID(){
+        Object notifier = new Object();
+        new Thread(new AdvIDReader(notifier)).start();
+
+        synchronized (notifier)
+        {
+            try {
+                while (!mNotifierDone)
+                    notifier.wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        assertNotNull(mAdvID);
     }
 
     @Test
@@ -268,6 +271,10 @@ public class AttributionTest extends WebtrekkBaseSDKTest {
             return;
 
         Webtrekk.getInstance().initWebtrekk(mApplication);
+
+        readAdvID();
+
+
         final PostInstallSender sender = new PostInstallSender(getApplication().getApplicationContext());
 
         sender.send(MEDIA_CODE, new PostInstallSender.CompleteNotifier() {
@@ -282,7 +289,7 @@ public class AttributionTest extends WebtrekkBaseSDKTest {
                 }
 
             }
-        });
+        }, mAdvID);
 
         synchronized (mWaiter) {
             while (!mNotifierDone)
@@ -295,6 +302,7 @@ public class AttributionTest extends WebtrekkBaseSDKTest {
 
         assertTrue(postInstallSendResult);
 
+        mNotifierDone = false;
         waitForMediaCode();
     }
 
