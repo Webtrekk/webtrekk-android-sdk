@@ -295,6 +295,7 @@ public class AttributionTest extends WebtrekkBaseSDKTest {
 
         assertTrue(postInstallSendResult);
 
+        waitForMediaCode();
     }
 
     @Test
@@ -305,6 +306,10 @@ public class AttributionTest extends WebtrekkBaseSDKTest {
 
         Webtrekk.getInstance().initWebtrekk(mApplication);
 
+        waitForMediaCode();
+    }
+
+    private void waitForMediaCode(){
         LocalBroadcastManager.getInstance(mApplication).registerReceiver(mSDKCampaignTestReceiver,
                 new IntentFilter("com.Webtrekk.CampainMediaMessage"));
 
