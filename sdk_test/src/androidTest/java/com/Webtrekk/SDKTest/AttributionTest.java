@@ -275,8 +275,9 @@ public class AttributionTest extends WebtrekkBaseSDKTest {
 
         readAdvID();
 
-
         final PostInstallSender sender = new PostInstallSender(getApplication().getApplicationContext());
+
+        mNotifierDone = false;
 
         sender.send(MEDIA_CODE, new PostInstallSender.CompleteNotifier() {
             @Override
