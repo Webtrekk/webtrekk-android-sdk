@@ -177,7 +177,6 @@ public class AttributionTest extends WebtrekkBaseSDKTest {
     {
         if (!mIsExternalCall)
             return;
-        mContext = getInstrumentation().getTargetContext();
 
         readAdvID();
 
@@ -193,6 +192,8 @@ public class AttributionTest extends WebtrekkBaseSDKTest {
     }
 
     private void readAdvID(){
+        mContext = getInstrumentation().getTargetContext();
+
         Object notifier = new Object();
         new Thread(new AdvIDReader(notifier)).start();
 
