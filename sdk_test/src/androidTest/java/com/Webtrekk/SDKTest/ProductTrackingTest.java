@@ -32,7 +32,6 @@ import org.junit.runner.RunWith;
 @RunWith(WebtrekkClassRunner.class)
 @LargeTest
 public class ProductTrackingTest extends WebtrekkBaseMainTest {
-    private Webtrekk mWebtrekk;
 
     @Rule
     public final WebtrekkTestRule<EmptyActivity> mActivityRule =
@@ -41,8 +40,7 @@ public class ProductTrackingTest extends WebtrekkBaseMainTest {
     @Override
     public void before() throws Exception{
         super.before();
-        mWebtrekk = Webtrekk.getInstance();
-        mWebtrekk.initWebtrekk(mApplication, R.raw.webtrekk_config_no_auto_track);
+        this.initWebtrekk(R.raw.webtrekk_config_no_auto_track);
     }
 
     @Override

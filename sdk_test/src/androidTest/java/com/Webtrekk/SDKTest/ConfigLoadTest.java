@@ -108,7 +108,7 @@ public class ConfigLoadTest extends WebtrekkBaseMainTest {
 
         cleanConfigPreference();
 
-        mWebtrekk.initWebtrekk(mApplication, config);
+        initWebtrekk(config);
         Activity activity = mActivityRule.launchActivity(null);
         try {
             Thread.sleep(1000);

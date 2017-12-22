@@ -45,8 +45,7 @@ public class WebViewIntegrationTest extends WebtrekkBaseMainTest {
         // define intefrace to catch web tracking
         final MainActivity activity = mActivityRule.getActivity();
         final WebView webView = (WebView)activity.findViewById(R.id.main_web_view);
-        final Webtrekk webtrekk = Webtrekk.getInstance();
-        final String everID = webtrekk.getEverId();
+        final String everID = mWebtrekk.getEverId();
 
         // define intefrace to catch web tracking
         activity.setLoadResourceCallback(new MainActivity.LoadWebViewResource(){

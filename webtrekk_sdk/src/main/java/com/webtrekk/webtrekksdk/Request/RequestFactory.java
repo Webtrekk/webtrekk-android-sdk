@@ -584,7 +584,9 @@ public class RequestFactory {
         if (!isCampaignFinished()){
             mPendingRequestStore.saveTrackingRequest(request);
         } else {
-            sendPendingRequests();
+            if (!sendPendingRequests()){
+                processInstallGoals(request);
+            }
             addURL(request.getUrlString());
         }
 
@@ -603,7 +605,9 @@ public class RequestFactory {
         }
     }
 
-    void sendPendingRequests(){
+    //return true if requests was added to queue
+    boolean sendPendingRequests(){
+        boolean result = false;
         WebtrekkLogging.log("try to send pending requests");
         if (isCampaignFinished() && !mPendingRequestStore.queueIsEmpty()){
             WebtrekkLogging.log("sending pending requests");
@@ -611,6 +615,7 @@ public class RequestFactory {
 
             if (!requests.isEmpty()){
                 processInstallGoals(requests.get(0));
+                result = true;
             }
 
             for (TrackingRequest request:requests){
@@ -618,6 +623,7 @@ public class RequestFactory {
             }
             mPendingRequestStore.deleteQueue();
         }
+        return result;
     }
 
     private boolean isCampaignFinished(){

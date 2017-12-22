@@ -29,7 +29,6 @@ import org.junit.runner.RunWith;
 @RunWith(WebtrekkClassRunner.class)
 @LargeTest
 public class AutoTrackingParametersTest extends WebtrekkBaseMainTest {
-    private Webtrekk mWebtrekk;
     private final String cs807New = "newcs807";
 
     @Rule
@@ -42,10 +41,10 @@ public class AutoTrackingParametersTest extends WebtrekkBaseMainTest {
         mWebtrekk = Webtrekk.getInstance();
         if (WebtrekkBaseMainTest.mTestName.equals("testSimpleAutoTest"))
         {
-            mWebtrekk.initWebtrekk(mApplication, R.raw.webtrekk_config_parameters_auto_track_test);
+            this.initWebtrekk(R.raw.webtrekk_config_parameters_auto_track_test);
         } else
         {
-            mWebtrekk.initWebtrekk(mApplication, R.raw.webtrekk_config_parameters_auto_track_test_complex);
+            this.initWebtrekk(R.raw.webtrekk_config_parameters_auto_track_test_complex);
         }
     }
 

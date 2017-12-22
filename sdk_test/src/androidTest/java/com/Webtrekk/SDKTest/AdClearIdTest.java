@@ -35,7 +35,6 @@ import org.junit.runner.RunWith;
 @LargeTest
 public class AdClearIdTest extends WebtrekkBaseMainTest {
 
-    private Webtrekk mWebtrekk;
     private static final long MILLISECONDS_UNTIL_01012011 = 1293840000000L;
 
     @Rule
@@ -45,8 +44,7 @@ public class AdClearIdTest extends WebtrekkBaseMainTest {
     @Override
     public void before() throws Exception {
         super.before();
-        mWebtrekk = Webtrekk.getInstance();
-        mWebtrekk.initWebtrekk(mApplication, R.raw.webtrekk_config_no_auto_track);
+        initWebtrekk(R.raw.webtrekk_config_no_auto_track);
         clearAdClearId();
     }
 

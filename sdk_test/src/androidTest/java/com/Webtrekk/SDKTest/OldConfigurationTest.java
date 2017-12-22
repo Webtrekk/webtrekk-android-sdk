@@ -30,7 +30,6 @@ import org.junit.runner.RunWith;
 @RunWith(WebtrekkClassRunner.class)
 @LargeTest
 public class OldConfigurationTest extends WebtrekkBaseMainTest  {
-    private Webtrekk mWebtrekk;
     private final long oneMeg = 1024 * 1024;
 
 
@@ -41,8 +40,7 @@ public class OldConfigurationTest extends WebtrekkBaseMainTest  {
     @Override
     public void before() throws Exception{
         super.before();
-        mWebtrekk = Webtrekk.getInstance();
-        mWebtrekk.initWebtrekk(mApplication, R.raw.webtrekk_config_old_configuration);
+        this.initWebtrekk(R.raw.webtrekk_config_old_configuration);
     }
 
     @Override

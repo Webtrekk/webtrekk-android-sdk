@@ -39,6 +39,15 @@ import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.concurrent.TimeUnit;
+
+import io.reactivex.Completable;
+import io.reactivex.CompletableEmitter;
+import io.reactivex.CompletableOnSubscribe;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.annotations.NonNull;
+import io.reactivex.annotations.Nullable;
+import io.reactivex.schedulers.Schedulers;
 
 /**
  * Created by vartbaronov on 22.06.17.
@@ -53,6 +62,7 @@ public class WebtrekkBaseSDKTest extends Assert implements WebtrekkTestRule.Test
     protected boolean mIsCDBTestRequest;
     public static String mTestName;
     private PowerManager.WakeLock mWakeLock;
+    Webtrekk mWebtrekk;
 
     public void before() throws Exception {
 
@@ -85,10 +95,12 @@ public class WebtrekkBaseSDKTest extends Assert implements WebtrekkTestRule.Test
     }
 
     protected void setupWTInstance(){
+        mWebtrekk = Webtrekk.getInstance();
         mSDKManager.setup();
     }
 
     protected void releaseWTInstance(){
+        mWebtrekk = null;
         mSDKManager.release(mApplication);
     }
 
@@ -198,6 +210,43 @@ public class WebtrekkBaseSDKTest extends Assert implements WebtrekkTestRule.Test
 
     protected Application getApplication(){
         return (Application)InstrumentationRegistry.getTargetContext().getApplicationContext();
+    }
+
+    protected void waitForFinishedCampaignProcess(@Nullable final Runnable callback){
+        Completable.create(new CompletableOnSubscribe() {
+            @Override
+            public void subscribe(@NonNull CompletableEmitter completableEmitter) throws Exception {
+                while (!isCampaignProcessFinished()){
+                    InstrumentationRegistry.getInstrumentation().waitForIdleSync();
+                }
+                if (callback != null) {
+                    callback.run();
+                }
+                completableEmitter.onComplete();
+            }
+        }).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread())
+                .blockingAwait(130, TimeUnit.SECONDS);
+    }
+
+    protected boolean isCampaignProcessFinished(){
+        final SharedPreferences preference = HelperFunctions.getWebTrekkSharedPreference(mApplication);
+        return preference.getBoolean("CAMPAIGN_PROCESS_FINISHED", false);
+    }
+
+    protected void initWebtrekk() {
+        initWebtrekk(-1);
+    }
+
+    protected void initWebtrekk(int configId){
+        if (configId < 0 ){
+            mWebtrekk.initWebtrekk(mApplication);
+        } else {
+            mWebtrekk.initWebtrekk(mApplication, configId);
+        }
+
+        if (!isCampaignProcessFinished()){
+            waitForFinishedCampaignProcess(null);
+        }
     }
 
 }

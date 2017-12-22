@@ -41,7 +41,7 @@ public class ContentGroupTest  extends WebtrekkBaseMainTest {
     @Override
     public void before() throws Exception {
         super.before();
-        Webtrekk.getInstance().initWebtrekk(mApplication, R.raw.webtrekk_config_no_auto_track);
+        this.initWebtrekk(R.raw.webtrekk_config_no_auto_track);
     }
 
     @Override

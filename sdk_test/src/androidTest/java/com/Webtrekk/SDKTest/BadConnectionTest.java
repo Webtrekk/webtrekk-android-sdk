@@ -34,7 +34,6 @@ import java.io.IOException;
 @LargeTest
 public class BadConnectionTest extends WebtrekkBaseMainTest {
 
-    private Webtrekk mWebtrekk;
     private static final int TRACKING_CALLS_STACK = 1000;
 
 
@@ -45,8 +44,7 @@ public class BadConnectionTest extends WebtrekkBaseMainTest {
     @Override
     public void before() throws Exception {
         super.before();
-        mWebtrekk = Webtrekk.getInstance();
-        mWebtrekk.initWebtrekk(mApplication, R.raw.webtrekk_config_connection_broken_request);
+        this.initWebtrekk(R.raw.webtrekk_config_connection_broken_request);
     }
 
     @After

@@ -34,8 +34,6 @@ import java.util.List;
 
 public class RecommendationsTest extends WebtrekkBaseMainTest {
 
-    Webtrekk mWebtrekk;
-
     @Rule
     public final WebtrekkTestRule<RecommendationActivity> mActivityRule =
             new WebtrekkTestRule<>(RecommendationActivity.class, null, false, false);
@@ -44,8 +42,7 @@ public class RecommendationsTest extends WebtrekkBaseMainTest {
     @Before
     public void before() throws Exception{
         super.before();
-        mWebtrekk = Webtrekk.getInstance();
-        mWebtrekk.initWebtrekk(mApplication, R.raw.webtrekk_config_recomendations);
+        this.initWebtrekk(R.raw.webtrekk_config_recomendations);
     }
 
     @Override
@@ -103,8 +100,7 @@ public class RecommendationsTest extends WebtrekkBaseMainTest {
     @Test
     public void testRecoRequest()
     {
-        Webtrekk webtrekk = Webtrekk.getInstance();
-        WebtrekkRecommendations recommendations = webtrekk.getRecommendations();
+        WebtrekkRecommendations recommendations = mWebtrekk.getRecommendations();
 
         initWaitingForTrack(null);
         final long currentThreadID = Thread.currentThread().getId();
