@@ -42,7 +42,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TrackingRequestTemporaryStore {
+class TrackingRequestTemporaryStore {
     final static private String FILE_NAME = "wt-pending-requests.json";
     final File mStoreFile;
     final TrackingConfiguration mConfiguration;
