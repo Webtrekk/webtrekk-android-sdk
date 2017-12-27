@@ -608,7 +608,6 @@ public class RequestFactory {
     //return true if requests was added to queue
     boolean sendPendingRequests(){
         boolean result = false;
-        WebtrekkLogging.log("try to send pending requests");
         if (isCampaignFinished() && !mPendingRequestStore.queueIsEmpty()){
             WebtrekkLogging.log("sending pending requests");
             List<TrackingRequest> requests = mPendingRequestStore.getAllSavedRequests();
