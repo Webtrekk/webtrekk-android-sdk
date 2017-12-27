@@ -234,17 +234,21 @@ public class WebtrekkBaseSDKTest extends Assert implements WebtrekkTestRule.Test
     }
 
     protected void initWebtrekk() {
-        initWebtrekk(-1);
+        initWebtrekk(-1, true);
     }
 
     protected void initWebtrekk(int configId){
+        initWebtrekk(configId, true);
+    }
+
+    protected void initWebtrekk(int configId, boolean waitForFinishCampaign){
         if (configId < 0 ){
             mWebtrekk.initWebtrekk(mApplication);
         } else {
             mWebtrekk.initWebtrekk(mApplication, configId);
         }
 
-        if (!isCampaignProcessFinished()){
+        if (waitForFinishCampaign && !isCampaignProcessFinished()){
             waitForFinishedCampaignProcess(null);
         }
     }

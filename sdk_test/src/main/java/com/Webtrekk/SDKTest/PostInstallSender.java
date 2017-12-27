@@ -49,10 +49,6 @@ public class PostInstallSender {
         this.applicationContext = applicationContext;
     }
 
-    void send(@NonNull String mediaCode, @NonNull CompleteNotifier completeCallback){
-        send (mediaCode, completeCallback, null);
-    }
-
     void send(@NonNull String mediaCode){
         send (mediaCode, null, null);
     }

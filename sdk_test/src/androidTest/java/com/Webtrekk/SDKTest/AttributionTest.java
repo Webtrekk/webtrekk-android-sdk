@@ -219,7 +219,7 @@ public class AttributionTest extends WebtrekkBaseSDKTest {
         LocalBroadcastManager.getInstance(getInstrumentation().getTargetContext()).registerReceiver(mSDKNoCampaignTestReceiver,
                 new IntentFilter("com.Webtrekk.CampainMediaMessage"));
 
-        this.initWebtrekk(R.raw.webtrekk_config_no_campaign_test);
+        this.initWebtrekk(R.raw.webtrekk_config_no_campaign_test, false);
 
         synchronized (mWaiter) {
             while (!mNotifierDone)
@@ -271,7 +271,7 @@ public class AttributionTest extends WebtrekkBaseSDKTest {
         if (!mIsExternalCall)
             return;
 
-        this.initWebtrekk();
+        this.initWebtrekk(-1, false);
 
         readAdvID();
 
@@ -314,7 +314,7 @@ public class AttributionTest extends WebtrekkBaseSDKTest {
         if (!mIsExternalCall)
             return;
 
-        this.initWebtrekk();
+        this.initWebtrekk(-1, false);
 
         waitForMediaCode();
     }
