@@ -49,6 +49,7 @@ public class AttributionTest extends WebtrekkBaseSDKTest {
     volatile String mAdvID;
     private Context mContext;
     volatile boolean mNotifierDone;
+    volatile boolean postInstallSendResult;
     final Object mWaiter = new Object();
     final String MEDIA_CODE = "MEDIA_CODE";
 
@@ -176,23 +177,8 @@ public class AttributionTest extends WebtrekkBaseSDKTest {
     {
         if (!mIsExternalCall)
             return;
-        Object notifier = new Object();
-        mContext = getInstrumentation().getTargetContext();
 
-        new Thread(new AdvIDReader(notifier)).start();
-
-        synchronized (notifier)
-        {
-            try {
-                while (!mNotifierDone)
-                   notifier.wait();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-
-        assertNotNull(mAdvID);
-
+        readAdvID();
 
         File file = new File(getInstrumentation().getTargetContext().getFilesDir(), mAdvID+".adv");
 
@@ -205,6 +191,25 @@ public class AttributionTest extends WebtrekkBaseSDKTest {
         Log.d(getClass().getName(), "Create advID file:" + file.getAbsolutePath());
     }
 
+    private void readAdvID(){
+        mContext = getInstrumentation().getTargetContext();
+
+        Object notifier = new Object();
+        new Thread(new AdvIDReader(notifier)).start();
+
+        synchronized (notifier)
+        {
+            try {
+                while (!mNotifierDone)
+                    notifier.wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        assertNotNull(mAdvID);
+    }
+
     @Test
     public void testNoCampaignMode(){
 
@@ -214,7 +219,7 @@ public class AttributionTest extends WebtrekkBaseSDKTest {
         LocalBroadcastManager.getInstance(getInstrumentation().getTargetContext()).registerReceiver(mSDKNoCampaignTestReceiver,
                 new IntentFilter("com.Webtrekk.CampainMediaMessage"));
 
-        Webtrekk.getInstance().initWebtrekk(mApplication, R.raw.webtrekk_config_no_campaign_test);
+        this.initWebtrekk(R.raw.webtrekk_config_no_campaign_test, false);
 
         synchronized (mWaiter) {
             while (!mNotifierDone)
@@ -262,13 +267,59 @@ public class AttributionTest extends WebtrekkBaseSDKTest {
     }
 
     @Test
+    public void sendPostBack(){
+        if (!mIsExternalCall)
+            return;
+
+        this.initWebtrekk(-1, false);
+
+        readAdvID();
+
+        final PostInstallSender sender = new PostInstallSender(getApplication().getApplicationContext());
+
+        mNotifierDone = false;
+
+        sender.send(MEDIA_CODE, new PostInstallSender.CompleteNotifier() {
+            @Override
+            public void complete(boolean isSuccessful) {
+                mNotifierDone = true;
+                postInstallSendResult = isSuccessful;
+
+                synchronized (mWaiter)
+                {
+                    mWaiter.notifyAll();
+                }
+
+            }
+        }, mAdvID);
+
+        synchronized (mWaiter) {
+            while (!mNotifierDone)
+                try {
+                    mWaiter.wait();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+        }
+
+        assertTrue(postInstallSendResult);
+
+        mNotifierDone = false;
+        waitForMediaCode();
+    }
+
+    @Test
     public void testFirstStart()
     {
         if (!mIsExternalCall)
             return;
 
-        Webtrekk.getInstance().initWebtrekk(mApplication);
+        this.initWebtrekk(-1, false);
 
+        waitForMediaCode();
+    }
+
+    private void waitForMediaCode(){
         LocalBroadcastManager.getInstance(mApplication).registerReceiver(mSDKCampaignTestReceiver,
                 new IntentFilter("com.Webtrekk.CampainMediaMessage"));
 

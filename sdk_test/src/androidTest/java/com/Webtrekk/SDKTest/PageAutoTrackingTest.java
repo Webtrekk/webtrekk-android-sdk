@@ -52,7 +52,7 @@ public class PageAutoTrackingTest extends WebtrekkBaseMainTest {
     @Before
     public void before() throws Exception {
         super.before();
-        Webtrekk.getInstance().initWebtrekk(mApplication);
+        this.initWebtrekk();
     }
 
     @Override

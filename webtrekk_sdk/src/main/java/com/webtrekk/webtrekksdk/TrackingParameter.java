@@ -23,9 +23,14 @@ import com.webtrekk.webtrekksdk.Configuration.TrackingConfiguration;
 import com.webtrekk.webtrekksdk.Request.TrackingRequest;
 import com.webtrekk.webtrekksdk.Utils.WebtrekkLogging;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -154,6 +159,10 @@ public class TrackingParameter {
                 break;
             case MEDIA_CAT:
                 this.mediaCategories.put(index, valueToAdd);
+                break;
+            case DEFAULT_PARAMETERS:
+                Parameter par = Parameter.fromString(index);
+                this.add(par, valueToAdd);
                 break;
             default:
                 WebtrekkLogging.log( "invalid trackingparam type");
@@ -373,7 +382,8 @@ public class TrackingParameter {
         PAGE_CAT("cg"),
         PRODUCT_CAT("ca"),
         MEDIA_CAT("mg"),
-        ACTIVITY_CAT(""),
+        CUSTOM_USER_PAR("cdb"),
+        DEFAULT_PARAMETERS("default_par"), //only for Json
 
 
         /**
@@ -401,6 +411,15 @@ public class TrackingParameter {
         public static Parameter getParameterByName(String name) {
             for(Parameter p: Parameter.values()) {
                 if(name.equals(p.name())) {
+                    return p;
+                }
+            }
+            return null;
+        }
+
+        static Parameter fromString(String name) {
+            for(Parameter p: Parameter.values()) {
+                if(name.equals(p.toString())) {
                     return p;
                 }
             }
@@ -561,5 +580,78 @@ public class TrackingParameter {
     private boolean validateQuerySize(TrackingParameter parameter, TrackingConfiguration configuration){
         TrackingRequest request = new TrackingRequest(parameter, configuration);
         return request.getRequestSize() <= TrackingParameter.MAX_QUERY_LENGTH;
+    }
+
+    /**
+     * @hide
+     * */
+    public JSONObject saveToJson() throws JSONException {
+        final JSONObject obj = new JSONObject();
+
+        //put defaults
+        putToJson(Parameter.DEFAULT_PARAMETERS.toString(), defaultParameter, obj);
+
+        for (Map.Entry<String, SortedMap<String, String>> entry: getParMapArrays().entrySet()){
+            putToJson(entry.getKey(), entry.getValue(), obj);
+        }
+
+        return obj;
+    }
+
+    @NonNull
+    private <T> void putToJson(@NonNull String parName, @NonNull Map<T, String> map,
+                               @NonNull JSONObject obj) throws JSONException {
+        final JSONObject parObject = new JSONObject();
+        for (Map.Entry<T, String> entry: map.entrySet()){
+            final String value = entry.getValue();
+            if (value != null && !value.isEmpty()) {
+                parObject.put(entry.getKey().toString(), entry.getValue());
+            }
+        }
+        obj.put(parName, parObject);
+    }
+
+    @NonNull
+    private Map<String, SortedMap<String, String>> getParMapArrays(){
+        Map<String, SortedMap<String, String>> parArrays = new HashMap<>();
+        parArrays.put(Parameter.PAGE.toString(), pageParameter);
+        parArrays.put(Parameter.SESSION.toString(), sessionParameter);
+        parArrays.put(Parameter.ECOM.toString(), ecomParameter);
+        parArrays.put(Parameter.USER_CAT.toString(), userCategories);
+        parArrays.put(Parameter.AD.toString(), adParameter);
+        parArrays.put(Parameter.ACTION.toString(), actionParameter);
+        parArrays.put(Parameter.PRODUCT_CAT.toString(), productCategories);
+        parArrays.put(Parameter.MEDIA_CAT.toString(), mediaCategories);
+        parArrays.put(Parameter.PAGE_CAT.toString(), pageCategories);
+        parArrays.put(Parameter.CUSTOM_USER_PAR.toString(), mCustomUserParameters);
+        return  parArrays;
+    }
+
+    private void loadParametersFromJson(@NonNull Parameter parameter,
+                                            JSONObject obj)  throws JSONException {
+        Iterator<String> iterator = obj.keys();
+        while (iterator.hasNext()){
+            String JsonKey = iterator.next();
+
+            add(parameter, JsonKey, obj.getString(JsonKey.toString()));
+        }
+    }
+
+    /**
+     * @hide
+     * */
+    public static TrackingParameter createFromJson(JSONObject object) throws JSONException {
+        TrackingParameter parameter = new TrackingParameter();
+
+        final JSONObject defaultJson = (JSONObject)object.get(Parameter.DEFAULT_PARAMETERS.toString());
+
+        parameter.loadParametersFromJson(Parameter.DEFAULT_PARAMETERS, defaultJson);
+
+        for (Map.Entry<String, SortedMap<String, String>> entry: parameter.getParMapArrays().entrySet()){
+            final JSONObject json = (JSONObject)object.get(entry.getKey());
+            parameter.loadParametersFromJson(Parameter.fromString(entry.getKey()), json);
+        }
+
+        return parameter;
     }
 }

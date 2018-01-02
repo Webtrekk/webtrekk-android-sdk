@@ -46,8 +46,6 @@ import static android.support.test.espresso.matcher.ViewMatchers.withId;
 @LargeTest
 public class MiscellaneousTest  extends WebtrekkBaseMainTest {
 
-    private Webtrekk mWebtrekk;
-
     private final String TOO_SHORT_EID = "123456789012345678";
     private final String TOO_LONG_EID = "12345678901324567890";
     private final String VALID_EID = "1234567890123465788";
@@ -60,8 +58,7 @@ public class MiscellaneousTest  extends WebtrekkBaseMainTest {
     @Override
     public void before() throws Exception{
         super.before();
-        mWebtrekk = Webtrekk.getInstance();
-        mWebtrekk.initWebtrekk(mApplication, R.raw.webtrekk_config_no_auto_track);
+        this.initWebtrekk(R.raw.webtrekk_config_no_auto_track);
     }
 
 

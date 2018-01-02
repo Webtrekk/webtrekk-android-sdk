@@ -42,7 +42,6 @@ import io.reactivex.schedulers.Schedulers;
 @RunWith(WebtrekkClassRunner.class)
 @LargeTest
 public class AppinstallGoalTest extends WebtrekkBaseMainTest {
-    Webtrekk mWebtrekk;
 
     @Rule
     public final WebtrekkTestRule<EmptyActivity> mActivityRule =
@@ -51,12 +50,11 @@ public class AppinstallGoalTest extends WebtrekkBaseMainTest {
     @Override
     public void before() throws Exception {
         super.before();
-        mWebtrekk = Webtrekk.getInstance();
         if (WebtrekkBaseMainTest.mTestName.equals("testGoalReceived")){
             //remove test processed goal
-            getPreference().edit().remove("appinstallGoalProcessed").commit();
+            getPreference().edit().remove("appinstallGoalProcessed").apply();
         }
-        mWebtrekk.initWebtrekk(mApplication, R.raw.webtrekk_config_no_auto_track);
+        this.initWebtrekk(R.raw.webtrekk_config_no_auto_track);
     }
 
     @Override
@@ -79,18 +77,12 @@ public class AppinstallGoalTest extends WebtrekkBaseMainTest {
 
     private void waitForCampaignCompleted(final boolean isExisted){
 
-        Completable.create(new CompletableOnSubscribe() {
+        waitForFinishedCampaignProcess(new Runnable() {
             @Override
-            public void subscribe(@NonNull CompletableEmitter completableEmitter) throws Exception {
-                final SharedPreferences preference = getPreference();
-                while (!preference.getBoolean("CAMPAIGN_PROCESS_FINISHED", false)){
-                    InstrumentationRegistry.getInstrumentation().waitForIdleSync();
-                }
+            public void run() {
                 checkForcb900(isExisted);
-                completableEmitter.onComplete();
             }
-        }).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread())
-                .blockingAwait(130, TimeUnit.SECONDS);
+        });
     }
 
     private void checkForcb900(boolean ifExisted){

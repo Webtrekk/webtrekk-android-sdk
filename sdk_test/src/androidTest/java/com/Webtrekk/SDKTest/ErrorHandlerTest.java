@@ -43,8 +43,6 @@ import java.util.List;
 
 public class ErrorHandlerTest extends WebtrekkBaseMainTest {
 
-    Webtrekk mWebtrekk;
-
     public ErrorHandlerTest(){
         super();
         mIsErrorHandlerTest = true;
@@ -71,7 +69,7 @@ public class ErrorHandlerTest extends WebtrekkBaseMainTest {
     public void testCatchedError()
     {
         deleteErrorHandlerFile(mApplication);
-        mWebtrekk.initWebtrekk(mApplication);
+        this.initWebtrekk();
 
         initWaitingForTrack(new Runnable() {
             @Override
@@ -104,7 +102,7 @@ public class ErrorHandlerTest extends WebtrekkBaseMainTest {
     public void testInfoError()
     {
         deleteErrorHandlerFile(mApplication);
-        mWebtrekk.initWebtrekk(mApplication);
+        this.initWebtrekk();
         initWaitingForTrack(new Runnable() {
             @Override
             public void run() {
@@ -125,7 +123,7 @@ public class ErrorHandlerTest extends WebtrekkBaseMainTest {
     @Test
     public void testStringNormalization(){
         deleteErrorHandlerFile(mApplication);
-        mWebtrekk.initWebtrekk(mApplication);
+        this.initWebtrekk();
         initWaitingForTrack(new Runnable() {
             @Override
             public void run() {
@@ -170,7 +168,7 @@ public class ErrorHandlerTest extends WebtrekkBaseMainTest {
         initWaitingForTrack(new Runnable() {
             @Override
             public void run() {
-                mWebtrekk.initWebtrekk(mApplication);
+                ErrorHandlerTest.this.initWebtrekk();
             }
         }, errorNumbers);
 

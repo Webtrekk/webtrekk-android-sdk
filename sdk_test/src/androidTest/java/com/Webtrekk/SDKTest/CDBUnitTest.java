@@ -70,15 +70,14 @@ public class CDBUnitTest extends WebtrekkBaseMainTest {
         final String LAST_CBD_REQUEST_DATE = "LAST_CBD_REQUEST_DATE";
         final long DATE_DELIMETER = 1000*60*60*24;
 
-        final Webtrekk webtrekk = Webtrekk.getInstance();
-        webtrekk.initWebtrekk(mApplication, R.raw.webtrekk_config_no_auto_track);
+        this.initWebtrekk(R.raw.webtrekk_config_no_auto_track);
 
         // do CDB test
 
         Runnable runnalble = new Runnable() {
             @Override
             public void run() {
-                webtrekk.track(new WebtrekkUserParameters().
+                mWebtrekk.track(new WebtrekkUserParameters().
                         setWindowsId(mParametersValue[mCycleTestArr[mTestCycleID][5]]).
                         setFacebookID(mParametersValue[mCycleTestArr[mTestCycleID][6]]).
                         setTwitterID(mParametersValue[mCycleTestArr[mTestCycleID][7]]).
@@ -86,7 +85,7 @@ public class CDBUnitTest extends WebtrekkBaseMainTest {
                         setLinkedInID(mParametersValue[mCycleTestArr[mTestCycleID][9]]).
                         setCustom(1, mParametersValue[mCycleTestArr[mTestCycleID][10]]));
 
-                webtrekk.track(new WebtrekkUserParameters().
+                mWebtrekk.track(new WebtrekkUserParameters().
                         setEmail(mParametersValue[mCycleTestArr[mTestCycleID][0]]).
                         setPhone(mParametersValue[mCycleTestArr[mTestCycleID][1]]).
                         setAddress(mParametersValue[mCycleTestArr[mTestCycleID][2]]).
@@ -120,7 +119,7 @@ public class CDBUnitTest extends WebtrekkBaseMainTest {
         initWaitingForTrack(new Runnable() {
             @Override
             public void run() {
-                webtrekk.track();
+                mWebtrekk.track();
             }
         });
 
@@ -220,13 +219,11 @@ public class CDBUnitTest extends WebtrekkBaseMainTest {
     private void doCDBTest()
     {
 
-        final Webtrekk webtrekk = Webtrekk.getInstance();
-
         if (mTestCycleID == 0)
             addTextToConsole("Start CDB test.........................\n");
 
         addTextToConsole("Start test cycle "+mTestCycleID+"..............................\n");
-        webtrekk.initWebtrekk(mApplication);
+        this.initWebtrekk();
         Runnable runnalble = null;
 
         switch (mTestCycleID)
@@ -235,7 +232,7 @@ public class CDBUnitTest extends WebtrekkBaseMainTest {
                 runnalble = new Runnable() {
                     @Override
                     public void run() {
-                        webtrekk.track(new WebtrekkUserParameters().
+                        mWebtrekk.track(new WebtrekkUserParameters().
                                 setEmail(mParametersValue[mCycleTestArr[mTestCycleID][0]]).
                                 setPhone(mParametersValue[mCycleTestArr[mTestCycleID][1]]).
                                 setAddress(mParametersValue[mCycleTestArr[mTestCycleID][2]]).
@@ -256,7 +253,7 @@ public class CDBUnitTest extends WebtrekkBaseMainTest {
                 runnalble = new Runnable() {
                     @Override
                     public void run() {
-                        webtrekk.track(new WebtrekkUserParameters().
+                        mWebtrekk.track(new WebtrekkUserParameters().
                                 setEmail(mParametersValue[mCycleTestArr[mTestCycleID][0]]).
                                 setPhone(mParametersValue[mCycleTestArr[mTestCycleID][1]]).
                                 setAddress(mParametersValue[mCycleTestArr[mTestCycleID][2]]));
@@ -267,7 +264,7 @@ public class CDBUnitTest extends WebtrekkBaseMainTest {
                 runnalble = new Runnable() {
                     @Override
                     public void run() {
-                        webtrekk.track(new WebtrekkUserParameters().
+                        mWebtrekk.track(new WebtrekkUserParameters().
                                 setEmailMD5(mParametersValue[mCycleTestArr[mTestCycleID][0]]).
                                 setEmailSHA256(mParametersValue[mCycleTestArr[mTestCycleID][1]]).
                                 setPhone(mParametersValue[mCycleTestArr[mTestCycleID][2]]).
@@ -279,7 +276,7 @@ public class CDBUnitTest extends WebtrekkBaseMainTest {
                 runnalble = new Runnable() {
                     @Override
                     public void run() {
-                        webtrekk.track(new WebtrekkUserParameters().
+                        mWebtrekk.track(new WebtrekkUserParameters().
                                 setPhoneMD5(mParametersValue[mCycleTestArr[mTestCycleID][0]]).
                                 setPhoneSHA256(mParametersValue[mCycleTestArr[mTestCycleID][1]]).
                                 setAddress(mParametersValue[mCycleTestArr[mTestCycleID][2]]));
@@ -291,7 +288,7 @@ public class CDBUnitTest extends WebtrekkBaseMainTest {
                 runnalble = new Runnable() {
                     @Override
                     public void run() {
-                        webtrekk.track(new WebtrekkUserParameters().
+                        mWebtrekk.track(new WebtrekkUserParameters().
                                 setAddress(mParametersValue[mCycleTestArr[mTestCycleID][0]]));
                     }
                 };
@@ -300,7 +297,7 @@ public class CDBUnitTest extends WebtrekkBaseMainTest {
                 runnalble = new Runnable() {
                     @Override
                     public void run() {
-                        webtrekk.track(new WebtrekkUserParameters().
+                        mWebtrekk.track(new WebtrekkUserParameters().
                                 setAddressMD5(mParametersValue[mCycleTestArr[mTestCycleID][0]]).
                                 setAddressSHA256(mParametersValue[mCycleTestArr[mTestCycleID][1]]));
                     }

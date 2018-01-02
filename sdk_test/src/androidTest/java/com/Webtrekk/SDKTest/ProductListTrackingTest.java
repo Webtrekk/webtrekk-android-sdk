@@ -52,8 +52,6 @@ import static java.lang.Thread.sleep;
 @RunWith(WebtrekkClassRunner.class)
 @LargeTest
 public class ProductListTrackingTest extends WebtrekkBaseMainTest {
-    private Webtrekk mWebtrekk;
-
     @Rule
     public final WebtrekkTestRule<ProductListActivity> mActivityRule =
             new WebtrekkTestRule<>(ProductListActivity.class, null,false, true);
@@ -78,7 +76,7 @@ public class ProductListTrackingTest extends WebtrekkBaseMainTest {
 
     private void initWT(){
         mWebtrekk = Webtrekk.getInstance();
-        mWebtrekk.initWebtrekk(mApplication, R.raw.webtrekk_config_no_auto_track);
+        this.initWebtrekk(R.raw.webtrekk_config_no_auto_track);
     }
     @Test
     public void manualTrackingTest(){

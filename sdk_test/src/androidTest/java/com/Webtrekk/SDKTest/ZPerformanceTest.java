@@ -39,7 +39,6 @@ import java.io.IOException;
 @RunWith(WebtrekkClassRunner.class)
 @LargeTest
 public class ZPerformanceTest extends WebtrekkBaseMainTest {
-    private Webtrekk mWebtrekk;
 
     @Rule
     public final WebtrekkTestRule<EmptyActivity> mActivityRule =
@@ -48,12 +47,11 @@ public class ZPerformanceTest extends WebtrekkBaseMainTest {
     @Override
     public void before() throws Exception{
         super.before();
-        mWebtrekk = Webtrekk.getInstance();
         boolean useManual = WebtrekkBaseMainTest.mTestName.equals("testFileCorruption")
                 || WebtrekkBaseMainTest.mTestName.equals("testTimePerformance")
                 || WebtrekkBaseMainTest.mTestName.equals("testSavingToFlashByTimeout");
         int configurationXMLID = useManual ? R.raw.webtrekk_config_manual_flush : R.raw.webtrekk_config_performance_test;
-        mWebtrekk.initWebtrekk(mApplication, configurationXMLID);
+        this.initWebtrekk(configurationXMLID);
         mHttpServer.resetRequestNumber();
     }
 

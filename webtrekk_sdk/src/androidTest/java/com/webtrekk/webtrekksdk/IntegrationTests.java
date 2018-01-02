@@ -19,17 +19,21 @@
 package com.webtrekk.webtrekksdk;
 
 import android.app.Activity;
+import android.content.SharedPreferences;
 import android.test.AndroidTestCase;
 
 import org.xmlpull.v1.XmlPullParserException;
 
+import java.io.File;
 import java.io.IOException;
 
+import com.webtrekk.webtrekksdk.Modules.Campaign;
 import com.webtrekk.webtrekksdk.Request.TrackingRequest;
 import com.webtrekk.webtrekksdk.TrackingParameter.Parameter;
 import com.webtrekk.webtrekksdk.Configuration.TrackingConfiguration;
 import com.webtrekk.webtrekksdk.Configuration.TrackingConfigurationXmlParser;
 import com.webtrekk.webtrekksdk.Utils.ActivityListener;
+import com.webtrekk.webtrekksdk.Utils.HelperFunctions;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -48,7 +52,9 @@ public class IntegrationTests extends AndroidTestCase {
         webtrekk = Webtrekk.getInstance();
         webtrekk.initWebtrekk(getContext());
 
-
+        Campaign.getFirstStartInitiated(getContext(), true);
+        SharedPreferences.Editor editor = HelperFunctions.getWebTrekkSharedPreference(getContext()).edit();
+        editor.putBoolean("CAMPAIGN_PROCESS_FINISHED", true).apply();
     }
 
     /**
@@ -57,6 +63,8 @@ public class IntegrationTests extends AndroidTestCase {
 
     public void testGlobalConstParameter(){
         TrackingConfiguration config = null;
+
+        (new File(getContext().getFilesDir(), "wt-pending-requests.json")).deleteOnExit();
 
         String configString = "<?xml version=\"1.0\" encoding=\"utf-8\"?><webtrekkConfiguration><globalTrackingParameter><parameter id=\"PRODUCT\">test_product</parameter><ecomParameter><parameter id=\"1\">test_ecomparam1</parameter></ecomParameter></globalTrackingParameter></webtrekkConfiguration>";
         try {

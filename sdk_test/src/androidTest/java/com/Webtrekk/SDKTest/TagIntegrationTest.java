@@ -29,8 +29,6 @@ import org.junit.Test;
 import static java.lang.Thread.sleep;
 
 public class TagIntegrationTest extends WebtrekkBaseMainTest {
-    private Webtrekk mWebtrekk;
-
 
     @Rule
     public final WebtrekkTestRule<TagIntegrationActivity> mActivityRule =
@@ -40,8 +38,7 @@ public class TagIntegrationTest extends WebtrekkBaseMainTest {
     public void before() throws Exception {
         super.before();
         cleanConfigPreference();
-        mWebtrekk = Webtrekk.getInstance();
-        mWebtrekk.initWebtrekk(mApplication, R.raw.webtrekk_config_tag_integration_test);
+        this.initWebtrekk(R.raw.webtrekk_config_tag_integration_test);
         mWebtrekk.getCustomParameter().put("AT1", "AT1Value");
         mWebtrekk.getCustomParameter().put("AT2", "AT2Value");
         mWebtrekk.getCustomParameter().put("AT3", "AT3Value");

@@ -62,14 +62,13 @@ public class MessageSendTest extends WebtrekkBaseMainTest {
     @Test
     public void testManualFlash()
     {
-        final Webtrekk webtrekk = Webtrekk.getInstance();
-        webtrekk.initWebtrekk(mApplication, R.raw.webtrekk_config_manual_flush);
+        this.initWebtrekk(R.raw.webtrekk_config_manual_flush);
         mActivityRule.launchActivity(null);
         mWaitMilliseconds = 2000;
         initWaitingForTrack(new Runnable() {
             @Override
             public void run() {
-                webtrekk.track();
+                mWebtrekk.track();
             }
         }, true);
 
@@ -77,7 +76,7 @@ public class MessageSendTest extends WebtrekkBaseMainTest {
 
         initWaitingForTrack(null);
 
-        webtrekk.send();
+        mWebtrekk.send();
 
         waitForTrackedURL();
     }
@@ -119,12 +118,11 @@ public class MessageSendTest extends WebtrekkBaseMainTest {
         prefEdit.putLong(URL_STORE_SENDED_URL_OFSSET, 0);
         prefEdit.putInt(URL_STORE_CURRENT_SIZE, 1000).apply();
 
-        Webtrekk webtrekk = Webtrekk.getInstance();
-        webtrekk.initWebtrekk(mApplication, R.raw.webtrekk_config_manual_flush);
+        this.initWebtrekk(R.raw.webtrekk_config_manual_flush);
 
         mWaitMilliseconds = 70000;
         initWaitingForTrack(null, 1000);
-        webtrekk.send();
+        mWebtrekk.send();
 
 
         waitForTrackedURLs();

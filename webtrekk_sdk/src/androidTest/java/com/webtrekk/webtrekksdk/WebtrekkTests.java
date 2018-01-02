@@ -28,6 +28,7 @@ import android.test.AndroidTestCase;
 
 import static org.mockito.Mockito.*;
 
+import com.webtrekk.webtrekksdk.Modules.Campaign;
 import com.webtrekk.webtrekksdk.Request.RequestFactory;
 import com.webtrekk.webtrekksdk.Request.RequestUrlStore;
 import com.webtrekk.webtrekksdk.Request.TrackingRequest;
@@ -51,10 +52,12 @@ public class WebtrekkTests extends AndroidTestCase {
         System.setProperty("dexmaker.dexcache", getContext().getCacheDir().toString());
 
         webtrekk = new Webtrekk();
-        SharedPreferences.Editor editor = getContext().getSharedPreferences(Webtrekk.PREFERENCE_FILE_NAME, Context.MODE_PRIVATE).edit();
+        SharedPreferences.Editor editor = HelperFunctions.getWebTrekkSharedPreference(getContext()).edit();
         editor.clear();
-        editor.commit();
+        editor.apply();
 
+        Campaign.getFirstStartInitiated(getContext(), true);
+        editor.putBoolean("CAMPAIGN_PROCESS_FINISHED", true).apply();
     }
 
     @Override
