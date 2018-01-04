@@ -100,7 +100,7 @@ class TrackingRequestTemporaryStore {
     }
 
     void deleteQueue(){
-        mStoreFile.deleteOnExit();
+        mStoreFile.delete();
     }
 
     boolean queueIsEmpty(){
