@@ -65,8 +65,8 @@ public class Campaign extends Thread
     private static final String FIRST_START_INITIATED_TIME = "FIRST_START_INITIATED_TIME";//old flag need to support old settings
     private static final String CAMPAIGN_MEDIA_CODE_DEFINED_MESSAGE = "com.Webtrekk.CampainMediaMessage";
     private static final String CAMPAIGN_PROCESS_FINISHED = "CAMPAIGN_PROCESS_FINISHED";
-    private static final long CAMPAIGN_ANALIZE_TIMEOUT = 60000;
-    private static final long CAMPAIGN_ANALIZE_PERIOD = 20000;
+    private static final long CAMPAIGN_ANALYZE_TIMEOUT = 60000;
+    private static final long CAMPAIGN_ANALYZE_PERIOD = 20000;
 
 
     Campaign(Context context, String trackID, boolean isFirstStart, boolean isAutoTrackAdvID, boolean enableCampaign) {
@@ -313,7 +313,7 @@ public class Campaign extends Thread
             tp.add(TrackingParameter.Parameter.USERAGENT, userAgent);
 
         final TrackingRequest tr = new TrackingRequest(tp, null, TrackingRequest.RequestType.INSTALL);
-        final long finishTime = getFirstStartInitiatedTime(mContext) + Campaign.CAMPAIGN_ANALIZE_TIMEOUT;
+        final long finishTime = getFirstStartInitiatedTime(mContext) + Campaign.CAMPAIGN_ANALYZE_TIMEOUT;
 
         do {
             try {
@@ -365,7 +365,7 @@ public class Campaign extends Thread
 
                     }
                 });
-                sleep(Campaign.CAMPAIGN_ANALIZE_PERIOD);
+                sleep(Campaign.CAMPAIGN_ANALYZE_PERIOD);
 
             } catch(MalformedURLException e){
                 WebtrekkLogging.log("Error constructing INSTALL URL:" + e.getMessage());
