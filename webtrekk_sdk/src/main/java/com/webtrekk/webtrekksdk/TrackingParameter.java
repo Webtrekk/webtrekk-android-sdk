@@ -164,6 +164,9 @@ public class TrackingParameter {
                 Parameter par = Parameter.fromString(index);
                 this.add(par, valueToAdd);
                 break;
+            case CUSTOM_USER_PAR:
+                this.mCustomUserParameters.put(index, valueToAdd);
+                break;
             default:
                 WebtrekkLogging.log( "invalid trackingparam type");
                 throw new IllegalArgumentException("invalid TrackingParameter type");
