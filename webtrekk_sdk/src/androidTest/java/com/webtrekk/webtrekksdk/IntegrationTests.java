@@ -64,7 +64,7 @@ public class IntegrationTests extends AndroidTestCase {
     public void testGlobalConstParameter(){
         TrackingConfiguration config = null;
 
-        (new File(getContext().getFilesDir(), "wt-pending-requests.json")).deleteOnExit();
+        (new File(getContext().getFilesDir(), "wt-pending-requests.json")).delete();
 
         String configString = "<?xml version=\"1.0\" encoding=\"utf-8\"?><webtrekkConfiguration><globalTrackingParameter><parameter id=\"PRODUCT\">test_product</parameter><ecomParameter><parameter id=\"1\">test_ecomparam1</parameter></ecomParameter></globalTrackingParameter></webtrekkConfiguration>";
         try {
