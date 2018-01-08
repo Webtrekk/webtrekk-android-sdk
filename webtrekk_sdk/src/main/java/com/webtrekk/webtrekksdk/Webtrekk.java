@@ -22,6 +22,8 @@ import android.app.Application;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Looper;
+import android.support.annotation.Nullable;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 
 import org.xmlpull.v1.XmlPullParserException;
@@ -735,6 +737,21 @@ public class Webtrekk implements ActivityListener.Callback {
         HelperFunctions.setDeepLinkMediaCode(mContext, mediaCode);
     }
 
+    //class for webVeiwCallback
+
+    static class AndroidWebViewCallback{
+        private final Context mContext;
+
+        AndroidWebViewCallback(@Nullable Context context){
+            mContext = context;
+        }
+
+        @JavascriptInterface
+        public String getEverId(){
+            return HelperFunctions.getEverId(mContext);
+        }
+    }
+
     /**
      * Use this function to establish user connection between App and Web tracking. In that case
      * Webtrekk use everId from App to track website that is opened by WebView. Please note that website
@@ -761,7 +778,11 @@ public class Webtrekk implements ActivityListener.Callback {
 
         final String everId = HelperFunctions.getEverId(mContext);;
 
-        webView.loadUrl("javascript: var webtrekkApplicationEverId = \"" + everId + "\";");
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+            webView.addJavascriptInterface(new AndroidWebViewCallback(mContext), "AndroidWebViewCallback");
+        } else {
+            webView.loadUrl("javascript: var webtrekkApplicationEverId = \"" + everId + "\";");
+        }
     }
 
     /**
