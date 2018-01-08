@@ -779,7 +779,7 @@ public class Webtrekk implements ActivityListener.Callback {
         final String everId = HelperFunctions.getEverId(mContext);;
 
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-            webView.addJavascriptInterface(new AndroidWebViewCallback(mContext), "AndroidWebViewCallback");
+            webView.addJavascriptInterface(new AndroidWebViewCallback(mContext), "WebtrekkAndroidWebViewCallback");
         } else {
             webView.loadUrl("javascript: var webtrekkApplicationEverId = \"" + everId + "\";");
         }
