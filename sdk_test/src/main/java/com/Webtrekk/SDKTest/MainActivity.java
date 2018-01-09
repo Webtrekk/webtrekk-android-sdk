@@ -26,8 +26,10 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Build;
+import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -36,18 +38,26 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.Webtrekk.SDKTest.ProductList.ProductListActivity;
 import com.webtrekk.webtrekksdk.Utils.WebtrekkLogging;
 import com.webtrekk.webtrekksdk.Webtrekk;
 import com.mixpanel.android.mpmetrics.MixpanelAPI;
 
+import io.reactivex.Completable;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.functions.Action;
+import io.reactivex.functions.Consumer;
+import io.reactivex.schedulers.Schedulers;
 
-public class MainActivity extends Activity {
+
+public class MainActivity extends AppCompatActivity {
     private Webtrekk webtrekk;
     private boolean mAdClearOn;
     private String ADCLEAR_SIGN = "ADCLEAR_SIGN";
     volatile private LoadWebViewResource mLoadResourceCallback;
+    private final PermissionRequest permissionRequest = new PermissionRequest();
 
     interface LoadWebViewResource {
         void load(String url);
@@ -70,9 +80,16 @@ public class MainActivity extends Activity {
 
         mediaCodeReceiverRegister();
 
-        webtrekk = initWithNormalParameter();
+        permissionRequest("android.permission.READ_CONTACTS",
+                "Permission Read Contact Granted", new Runnable() {
+                    @Override
+                    public void run() {
+                        webtrekk = initWithNormalParameter();
 
-        webtrekk.getCustomParameter().put("own_para", "my-value");
+                        webtrekk.getCustomParameter().put("own_para", "my-value");
+                    }
+                });
+
 
         ((TextView)findViewById(R.id.main_version)).setText(getString(R.string.hello_world) + "\nLibrary Version:" + Webtrekk.mTrackingLibraryVersionUI);
         MixpanelAPI mixpanel = MixpanelAPI.getInstance(this, "9e956a2e5169ddb44eb87b6acb0eee95");
@@ -232,6 +249,10 @@ public class MainActivity extends Activity {
 
     public void appToWebConnection(View view){
 
+        if (webtrekk == null){
+            return;
+        }
+
         final WebView webView = (WebView)findViewById(R.id.main_web_view);
         webView.setVisibility(View.VISIBLE);
 
@@ -258,4 +279,30 @@ public class MainActivity extends Activity {
     public Webtrekk getWebtrekk() {
         return webtrekk;
     }
+
+    private void permissionRequest(String permission, final String permissionUIName, @NonNull  final Runnable onComplete){
+        final Completable complete = permissionRequest.
+                requestPermission(this, permission);
+        complete.subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Action() {
+                    @Override
+                    public void run() throws Exception {
+                       Log.d("Permission", permissionUIName);
+                        onComplete.run();
+                    }
+                }, new Consumer<Throwable>() {
+                    @Override
+                    public void accept(Throwable throwable) throws Exception {
+                        Log.d("Permission", "Permission Error: " + throwable.getLocalizedMessage());
+                    }
+                });
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                    @NonNull int[] grantResults) {
+        permissionRequest.processResponse(requestCode, permissions, grantResults);
+    }
+
 }

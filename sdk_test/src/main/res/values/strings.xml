@@ -12,4 +12,6 @@
     <string name="product_add">Add</string>
     <string name="product_conf">Conf</string>
     <string name="product_clear_basket">Clear Basket</string>
+    <string name="permission_error">Permittion Error</string>
+    <string name="permission_granted">Permittion Granted</string>
 </resources>
