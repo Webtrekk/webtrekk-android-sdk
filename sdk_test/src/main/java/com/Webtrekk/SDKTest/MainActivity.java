@@ -27,6 +27,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Build;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.content.LocalBroadcastManager;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -44,6 +45,8 @@ import com.Webtrekk.SDKTest.ProductList.ProductListActivity;
 import com.webtrekk.webtrekksdk.Utils.WebtrekkLogging;
 import com.webtrekk.webtrekksdk.Webtrekk;
 import com.mixpanel.android.mpmetrics.MixpanelAPI;
+
+import java.util.List;
 
 import io.reactivex.Completable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -80,16 +83,22 @@ public class MainActivity extends AppCompatActivity {
 
         mediaCodeReceiverRegister();
 
-        permissionRequest("android.permission.READ_CONTACTS",
-                "Permission Read Contact Granted", new Runnable() {
-                    @Override
-                    public void run() {
-                        webtrekk = initWithNormalParameter();
+        final String permissions[] = {"android.permission.READ_CONTACTS", "android.permission.READ_EXTERNAL_STORAGE",
+                "android.permission.WRITE_EXTERNAL_STORAGE"};
 
-                        webtrekk.getCustomParameter().put("own_para", "my-value");
-                    }
-                });
+        final String permissionsUI[] = {"Permission Read Contact Granted", "Permission Read External Storage Granted",
+                "Permission Write External Storage Granted"};
 
+        final Runnable runnables[] = {new Runnable() {
+            @Override
+            public void run() {
+                webtrekk = initWithNormalParameter();
+
+                webtrekk.getCustomParameter().put("own_para", "my-value");
+            }
+        }, null, null};
+
+        permissionRequest(permissions, permissionsUI, runnables);
 
         ((TextView)findViewById(R.id.main_version)).setText(getString(R.string.hello_world) + "\nLibrary Version:" + Webtrekk.mTrackingLibraryVersionUI);
         MixpanelAPI mixpanel = MixpanelAPI.getInstance(this, "9e956a2e5169ddb44eb87b6acb0eee95");
@@ -280,23 +289,32 @@ public class MainActivity extends AppCompatActivity {
         return webtrekk;
     }
 
-    private void permissionRequest(String permission, final String permissionUIName, @NonNull  final Runnable onComplete){
-        final Completable complete = permissionRequest.
-                requestPermission(this, permission);
-        complete.subscribeOn(Schedulers.newThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Action() {
-                    @Override
-                    public void run() throws Exception {
-                       Log.d("Permission", permissionUIName);
-                        onComplete.run();
-                    }
-                }, new Consumer<Throwable>() {
-                    @Override
-                    public void accept(Throwable throwable) throws Exception {
-                        Log.d("Permission", "Permission Error: " + throwable.getLocalizedMessage());
-                    }
-                });
+    private void permissionRequest(String permissions[], final String permissionUINames[], @Nullable  final Runnable onCompletes[]){
+        final List<Completable> completes = permissionRequest.
+                requestPermission(this, permissions);
+
+        for (int i = 0; i < completes.size(); i++) {
+            final Completable complete = completes.get(i);
+            final String permissionUIName = permissionUINames[i];
+            final Runnable onComplete = onCompletes == null ? null : onCompletes[i];
+
+            complete.subscribeOn(Schedulers.newThread())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(new Action() {
+                        @Override
+                        public void run() throws Exception {
+                            Log.d("Permission", permissionUIName);
+                            if (onCompletes != null && onComplete != null) {
+                                onComplete.run();
+                            }
+                        }
+                    }, new Consumer<Throwable>() {
+                        @Override
+                        public void accept(Throwable throwable) throws Exception {
+                            Log.d("Permission", "Permission Error: " + throwable.getLocalizedMessage());
+                        }
+                    });
+        }
     }
 
     @Override

@@ -7,7 +7,10 @@ import android.support.v4.content.ContextCompat;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import io.reactivex.Completable;
@@ -25,19 +28,27 @@ public class PermissionRequest {
     /**main function request for permission. If Completable completes permission is granted.
      * Otherwise error is emitted.
     */
-    public Completable requestPermission(@NotNull Activity activity, @NotNull String permission) {
+    public List<Completable> requestPermission(@NotNull Activity activity, @NotNull String permissions[]) {
 
-        AsyncSubject<Void> observable = AsyncSubject.create();
-        if (ContextCompat.checkSelfPermission(activity, permission)
-                != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(activity,
-                    new String[]{permission}, PERMISSION_REQUEST);
-            observables.put(permission, observable);
-            return Completable.fromObservable(observable);
-        } else{
-            return Completable.complete();
+        List<Completable> completables = new ArrayList<>();
+        List<String> permissionsResult = new ArrayList<>();
+
+        for (String permission: permissions) {
+            AsyncSubject<Void> observable = AsyncSubject.create();
+            if (ContextCompat.checkSelfPermission(activity, permission)
+                    != PackageManager.PERMISSION_GRANTED) {
+                permissionsResult.add(permission);
+                observables.put(permission, observable);
+                completables.add(Completable.fromObservable(observable));
+            } else {
+                completables.add(Completable.complete());
+            }
         }
 
+        ActivityCompat.requestPermissions(activity,
+                permissionsResult.toArray(new String[permissionsResult.size()]), PERMISSION_REQUEST);
+
+        return completables;
     }
 
     // process response for onRequestPermissionsResult message
