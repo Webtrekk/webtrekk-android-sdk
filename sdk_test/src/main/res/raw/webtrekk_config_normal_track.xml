@@ -136,7 +136,7 @@
 
     <!--activity configurations -->
     <screen>
-        <classname type="text">com.Webtrekk.SDKTest.MainActivity</classname>
+        <classname type="text">com.webtrekk.SDKTest.MainActivity</classname>
         <mappingname type="text">Startseite</mappingname>
         <autoTracked type="text">true</autoTracked>
 
@@ -182,14 +182,14 @@
     </screen>
 
     <screen>
-        <classname type="text">com.Webtrekk.SDKTest.PageExampleActivity</classname>
+        <classname type="text">com.webtrekk.SDKTest.PageExampleActivity</classname>
         <mappingname type="text">Seite</mappingname>
         <screenTrackingParameter>
             <parameter id="PAGE_URL">http://www.yandex.ru</parameter>
         </screenTrackingParameter>
     </screen>
     <screen>
-        <classname type="text">com.Webtrekk.SDKTest.NextPageExampleActivity</classname>
+        <classname type="text">com.webtrekk.SDKTest.NextPageExampleActivity</classname>
         <mappingname type="text">NextPage</mappingname>
     </screen>
 </webtrekkConfiguration>

@@ -38,7 +38,7 @@
         </userCategories>
     </globalTrackingParameter>
     <screen>
-        <classname type="text">com.Webtrekk.SDKTest.TagIntegrationActivity</classname>
+        <classname type="text">com.webtrekk.SDKTest.TagIntegrationActivity</classname>
         <mappingname type="text">TestActivity</mappingname>
         <autoTracked>false</autoTracked>
         <screenTrackingParameter>

@@ -4,7 +4,7 @@
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
     android:paddingBottom="@dimen/activity_vertical_margin"
-    tools:context="com.Webtrekk.SDKTest.PageExampleActivity">
+    tools:context="com.webtrekk.SDKTest.PageExampleActivity">
 
     <LinearLayout
         android:orientation="vertical"
