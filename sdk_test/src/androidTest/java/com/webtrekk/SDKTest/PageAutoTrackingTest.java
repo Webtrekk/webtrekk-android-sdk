@@ -137,7 +137,7 @@ public class PageAutoTrackingTest extends WebtrekkBaseMainTest {
 
         @Override
         public void onActivityStarted(Activity activity) {
-            if (activity.getLocalClassName().equals(mActivityName)){
+            if (activity.getLocalClassName().contains(mActivityName)){
                 mIsStoped = false;
             }
         }
@@ -154,7 +154,7 @@ public class PageAutoTrackingTest extends WebtrekkBaseMainTest {
 
         @Override
         public void onActivityStopped(Activity activity) {
-            if (activity.getLocalClassName().equals(mActivityName)){
+            if (activity.getLocalClassName().contains(mActivityName)){
                 mIsStoped = true;
             }
         }
