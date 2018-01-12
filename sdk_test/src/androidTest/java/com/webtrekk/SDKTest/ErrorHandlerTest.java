@@ -181,14 +181,14 @@ public class ErrorHandlerTest extends WebtrekkBaseMainTest {
             {
                 case 0:
                     assertEquals(parcel.getValue("ck911"), "java.lang.RuntimeException");
-                    assertEquals(getNormString(parcel.getValue("ck912")), "Unable+to+start+activity+ComponentInfo%7Bcom.webtrekk.SDKTest%2Fcom.webtrekk.SDKTest.ThrowExceptionActivity%7D%3A+java.lang.NullPointerException%3A+Attempt+to+invoke+virtual+method+%27int+java.lang.String.length%28%29%27+on+a+null+object+reference");
+                    assertEquals(getNormString(parcel.getValue("ck912")), "Unable+to+start+activity+ComponentInfo%7Bcom.Webtrekk.SDKTest%2Fcom.webtrekk.SDKTest.ThrowExceptionActivity%7D%3A+java.lang.NullPointerException%3A+Attempt+to+invoke+virtual+method+%27int+java.lang.String.length%28%29%27+on+a+null+object+reference");
                     assertEquals(getNormString(parcel.getValue("ck913")), "Attempt+to+invoke+virtual+method+%27int+java.lang.String.length%28%29%27+on+a+null+object+reference");
                     assertEquals(getNormString(parcel.getValue("ck914")), "android.app.ActivityThread.performLaunchActivity%28ActivityThread.java%29%7Candroid.app.ActivityThread.handleLaunchActivity%28ActivityThread.java%29%7Candroid.app.ActivityThread.access%24800%28ActivityThread.java%29%7C");
                     assertEquals(getNormString(parcel.getValue("ck915")), "com.webtrekk.SDKTest.ThrowExceptionActivity.onCreate%28ThrowExceptionActivity.java%3A%29%7Candroid.app.Activity.performCreate%28Activity.java%29%7Candroid.app.Instrumentation.callActivityOnCreate%28Instrumentation.java%29%7C");
                     break;
                 case 1:
                     assertEquals(parcel.getValue("ck911"), "java.lang.RuntimeException");
-                    assertEquals(getNormString(parcel.getValue("ck912")), "Unable+to+start+activity+ComponentInfo%7Bcom.webtrekk.SDKTest%2Fcom.webtrekk.SDKTest.ThrowExceptionActivity%7D%3A+java.lang.NumberFormatException%3A+Invalid+int%3A+%22sdfsdf%22");
+                    assertEquals(getNormString(parcel.getValue("ck912")), "Unable+to+start+activity+ComponentInfo%7Bcom.Webtrekk.SDKTest%2Fcom.webtrekk.SDKTest.ThrowExceptionActivity%7D%3A+java.lang.NumberFormatException%3A+Invalid+int%3A+%22sdfsdf%22");
                     assertEquals(getNormString(parcel.getValue("ck913")), "Invalid+int%3A+%22sdfsdf%22");
                     assertEquals(getNormString(parcel.getValue("ck914")), "android.app.ActivityThread.performLaunchActivity%28ActivityThread.java%29%7Candroid.app.ActivityThread.handleLaunchActivity%28ActivityThread.java%29%7Candroid.app.ActivityThread.access%24800%28ActivityThread.java%29%7C");
                     assertEquals(getNormString(parcel.getValue("ck915")), "java.lang.Integer.invalidInt%28Integer.java%29%7Cjava.lang.Integer.parse%28Integer.java%29%7Cjava.lang.Integer.parseInt%28Integer.java%29%7Cjava.lang.Integer.parseInt%28Integer.java%29%7Cjava.lang.Integer.valueOf%28Integer.java%29%7C");
