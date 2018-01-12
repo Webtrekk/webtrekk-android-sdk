@@ -37,6 +37,7 @@ public class ReferrerReceiver extends BroadcastReceiver {
 
     /**
      * @hide
+     * Process referrer after first install. It just saved referrer to preference.
      */
     @Override
     public void onReceive(Context context, Intent intent) {

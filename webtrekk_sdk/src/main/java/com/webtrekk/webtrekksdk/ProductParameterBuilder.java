@@ -22,7 +22,8 @@ import android.support.annotation.Nullable;
  */
 
 /**
- * Class is used to generate TrackingParameter for product
+ * Class is used to generate TrackingParameter for product. Mandatory fields are productId and action type. They should be provided as parameter for constructor.
+ * After that can be called multiple functions that setup different parameters like position, cost, ecommerce parameters, etc.
  */
 public class ProductParameterBuilder {
 
@@ -67,84 +68,157 @@ public class ProductParameterBuilder {
     }
 
 
+    /**
+     * set Position
+     * @param value
+     * @return instance of ProductParameterBuilder
+     */
     @NonNull
     public ProductParameterBuilder setPosition(int value) {
         mParameter.add(TrackingParameter.Parameter.PRODUCT_POSITION, Integer.toString(value));
         return this;
     }
 
+    /**
+     * set Costs
+     * @param value
+     * @return instance of ProductParameterBuilder
+     */
     @NonNull
     public ProductParameterBuilder setCost(float value) {
         mParameter.add(TrackingParameter.Parameter.PRODUCT_COST, Float.toString(value));
         return this;
     }
 
+    /**
+     * set Ecommerce custom parameter
+     * @param index index of parameter
+     * @param value
+     * @return instance of ProductParameterBuilder
+     */
     @NonNull
     public ProductParameterBuilder setEcommerce(int index, @NonNull String value) {
         mParameter.add(TrackingParameter.Parameter.ECOM, Integer.toString(index), value);
         return this;
     }
 
+    /**
+     * set ProductCategory
+     * @param index index of parameter
+     * @param value
+     * @return instance of ProductParameterBuilder
+     */
     @NonNull
     public ProductParameterBuilder setProductCategory(int index, @NonNull String value) {
         mParameter.add(TrackingParameter.Parameter.PRODUCT_CAT, Integer.toString(index), value);
         return this;
     }
 
+    /**
+     * set product quantity
+     * @param value
+     * @return instance of ProductParameterBuilder
+     */
     @NonNull
     public ProductParameterBuilder setProductQuantity(int value) {
         mParameter.add(TrackingParameter.Parameter.PRODUCT_COUNT, Integer.toString(value));
         return this;
     }
 
+    /**
+     * set payment method
+     * @param value
+     * @return instance of ProductParameterBuilder
+     */
     @NonNull
     public ProductParameterBuilder setPaymentMethod(String value) {
         mParameter.add(TrackingParameter.Parameter.PRODUCT_PAYMENT_METHOD, value);
         return this;
     }
 
+
+    /**
+     * set shipping service
+     * @param value
+     * @return instance of ProductParameterBuilder
+     */
     @NonNull
     public ProductParameterBuilder setShippingService(String value) {
         mParameter.add(TrackingParameter.Parameter.PRODUCT_SHIPPING_SERVICE, value);
         return this;
     }
 
+    /**
+     * set shipping speed
+     * @param value
+     * @return instance of ProductParameterBuilder
+     */
     @NonNull
     public ProductParameterBuilder setShippingSpeed(String value) {
         mParameter.add(TrackingParameter.Parameter.PRODUCT_SHIPPING_SPEED, value);
         return this;
     }
 
+    /**
+     * set shipping cost
+     * @param value
+     * @return  instance of ProductParameterBuilder
+     */
     @NonNull
     public ProductParameterBuilder setShippingCost(float value) {
         mParameter.add(TrackingParameter.Parameter.PRODUCT_SHIPPING_COST, Float.toString(value));
         return this;
     }
 
+    /**
+     * set gross margin
+     * @param value
+     * @return instance of ProductParameterBuilder
+     */
     @NonNull
     public ProductParameterBuilder setGrossMargin(float value) {
         mParameter.add(TrackingParameter.Parameter.PRODUCT_GROSS_MARGIN, Float.toString(value));
         return this;
     }
 
+    /**
+     * set order status
+     * @param value
+     * @return instance of ProductParameterBuilder
+     */
     @NonNull
     public ProductParameterBuilder setOrderStatus(String value) {
         mParameter.add(TrackingParameter.Parameter.PRODUCT_ORDER_STATUS, value);
         return this;
     }
 
+    /**
+     * set product variant
+     * @param value
+     * @return instance of ProductParameterBuilder
+     */
     @NonNull
     public ProductParameterBuilder setProductVariant(String value) {
         mParameter.add(TrackingParameter.Parameter.PRODUCT_VARIANT, value);
         return this;
     }
 
+    /**
+     * set coupon value
+     * @param value
+     * @return instance of ProductParameterBuilder
+     */
     @NonNull
     public ProductParameterBuilder setCouponValue(String value) {
         mParameter.add(TrackingParameter.Parameter.PRODUCT_COUPON, value);
         return this;
     }
 
+    /**
+     * set is product sold out
+     * @param value
+     * @return instance of ProductParameterBuilder
+     */
     @NonNull
     public ProductParameterBuilder setIsProductSoldOut(boolean value) {
         mParameter.add(TrackingParameter.Parameter.PRODUCT_SOLD_OUT, value ? "1" : "0");
@@ -159,6 +233,8 @@ public class ProductParameterBuilder {
         return validate() ? mParameter : null;
     }
 
+
+    // validate if object has correct parameters for given type.
     private boolean validate(){
         final boolean isProduct = mParameter.getDefaultParameter().get(TrackingParameter.Parameter.PRODUCT) != null;
         switch (mType){

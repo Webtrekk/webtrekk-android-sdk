@@ -587,6 +587,7 @@ public class TrackingParameter {
 
     /**
      * @hide
+     * Serialize this object to JSON Object
      * */
     public JSONObject saveToJson() throws JSONException {
         final JSONObject obj = new JSONObject();
@@ -602,6 +603,9 @@ public class TrackingParameter {
     }
 
     @NonNull
+    /*
+        Serialize single parameter to JSON
+     */
     private <T> void putToJson(@NonNull String parName, @NonNull Map<T, String> map,
                                @NonNull JSONObject obj) throws JSONException {
         final JSONObject parObject = new JSONObject();
@@ -614,6 +618,9 @@ public class TrackingParameter {
         obj.put(parName, parObject);
     }
 
+    /*
+        get arrays of all parameters except defaultParameter
+    */
     @NonNull
     private Map<String, SortedMap<String, String>> getParMapArrays(){
         Map<String, SortedMap<String, String>> parArrays = new HashMap<>();
@@ -642,6 +649,7 @@ public class TrackingParameter {
 
     /**
      * @hide
+     * Create TrackingParameter object from JSONObject
      * */
     public static TrackingParameter createFromJson(JSONObject object) throws JSONException {
         TrackingParameter parameter = new TrackingParameter();
