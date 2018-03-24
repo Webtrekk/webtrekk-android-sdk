@@ -1,29 +1,11 @@
-/*
- * The MIT License (MIT)
- *
- * Copyright (c) 2016 Webtrekk GmbH
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
- * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- *
- * Created by Thomas Dahlmann on 17.09.15.
- */
-
 package com.webtrekk.webtrekksdk.Configuration;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.os.AsyncTask;
-import android.preference.PreferenceManager;
+import android.util.Log;
 
 import com.webtrekk.webtrekksdk.Request.RequestProcessor;
+import com.webtrekk.webtrekksdk.Utils.ActivityTrackingStatus;
 import com.webtrekk.webtrekksdk.Utils.AsyncTest;
 import com.webtrekk.webtrekksdk.Utils.HelperFunctions;
 import com.webtrekk.webtrekksdk.Utils.WebtrekkLogging;
@@ -32,6 +14,7 @@ import com.webtrekk.webtrekksdk.Webtrekk;
 import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -39,12 +22,24 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
+import java.util.concurrent.Callable;
+
+import rx.Observable;
+import rx.Observer;
+import rx.Subscriber;
+import rx.Subscription;
+import rx.functions.Func0;
 
 /**
- * This classe downloads the xml configuration from the configured remote url,
- * it runs asynchronous in the background during application start if enabled
+ * Created by eabdelra on 3/24/2018.
  */
-public class TrackingConfigurationDownloadTask extends AsyncTask<String, Void, TrackingConfiguration> {
+
+///// create TrackingConfigurationDownloadTask observer instead on AsyncTack and instead
+/// of calling doInbackground we will call the observable .fromCallable
+/// and instead of onPostExecute we will call onNext Observer
+
+public class TrackingConfigurationDownloadTask implements Observer<TrackingConfiguration> {
+
     private Context context;
     private Webtrekk webtrekk;
     private TrackingConfiguration trackingConfiguration;
@@ -59,50 +54,48 @@ public class TrackingConfigurationDownloadTask extends AsyncTask<String, Void, T
         this.asyncTest = asyncTest;
     }
 
-    /**
-     * runs in the background and downloads and parses the xmlconfigration from the configured remoteurl
-     *
-     * @param urls
-     * @return
-     */
-    @Override
-    protected TrackingConfiguration doInBackground(String... urls) {
-        WebtrekkLogging.log("trying to get remote configuration url: " + urls[0]);
-        // Instantiate the parser
-        TrackingConfigurationXmlParser trackingConfigurationParser = new TrackingConfigurationXmlParser();
-        //stream = downloadUrl(urls[0]);
 
-        try {
-            trackingConfigurationString = getXmlFromUrl(urls[0]);
-            WebtrekkLogging.log("remote configuration string: " + trackingConfigurationString);
-            if (trackingConfigurationString != null) {
-                trackingConfiguration = trackingConfigurationParser.parse(trackingConfigurationString);
-                return trackingConfiguration;
-            } else {
-                WebtrekkLogging.log("error getting the xml configuration string from url: " + urls[0]);
-            }
+    public Observable<TrackingConfiguration> parseConfiguration(final String urls){
 
-            // Makes sure that the InputStream is closed after the app is
-            // finished using it.
-        } catch (IOException e) {
-            WebtrekkLogging.log("xml parser error, ioexception", e);
-        } catch (XmlPullParserException e) {
-            WebtrekkLogging.log("xml parser error, no validate xml configuration file", e);
-        } catch (Exception e) {
-            WebtrekkLogging.log("error getting remove configuration", e);
+        return Observable.fromCallable(
+                new Callable<TrackingConfiguration>() {
+                    @Override
+                    public TrackingConfiguration call() throws Exception {
+                        WebtrekkLogging.log("trying to get remote configuration url: " + urls);
+                        // Instantiate the parser
+                        TrackingConfigurationXmlParser trackingConfigurationParser = new TrackingConfigurationXmlParser();
+                        //stream = downloadUrl(urls[0]);
+
+                        trackingConfigurationString = getXmlFromUrl(urls);
+                        WebtrekkLogging.log("remote configuration string: " + trackingConfigurationString);
+                        if (trackingConfigurationString != null) {
+                            trackingConfiguration = trackingConfigurationParser.parse(trackingConfigurationString);
+                            return trackingConfiguration;
+                        } else {
+
+                            WebtrekkLogging.log("error getting the xml configuration string from url: " + urls);
+                        }
+
+                        return null;
+                    }
+
+                });
         }
+    @Override
+    public void onCompleted() {
 
-        return null;
     }
 
-    /**
-     * this method gets called when the doInBackground method is finished it replaces the current
-     * TrackingConfiguration with a newer one if one was found online, and also store it in the shared prefs
-     *
-     * @param config
-     */
     @Override
-    protected void onPostExecute(TrackingConfiguration config) {
+    public void onError(Throwable e) {
+
+        Log.i("onError","Throwable ",e);
+
+    }
+
+    @Override
+    public void onNext(TrackingConfiguration config) {
+
         if (config == null) {
             WebtrekkLogging.log("error getting a new valid configuration from remote url, tracking with the old config");
         } else {
@@ -132,8 +125,8 @@ public class TrackingConfigurationDownloadTask extends AsyncTask<String, Void, T
             asyncTest.workDone();
             WebtrekkLogging.log("asyncTest: workdDone()");
         }
-
     }
+
 
     /**
      * Reads a stream and writes it into a string. Closes inputStream when done.
