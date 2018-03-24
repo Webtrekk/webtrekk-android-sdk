@@ -46,10 +46,18 @@ import com.webtrekk.webtrekksdk.Configuration.TrackingConfigurationDownloadTask;
 import com.webtrekk.webtrekksdk.Configuration.TrackingConfigurationXmlParser;
 import com.webtrekk.webtrekksdk.Utils.WebtrekkLogging;
 
+import rx.Observable;
+import rx.Observer;
+import rx.Subscriber;
+import rx.Subscription;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Func1;
+import rx.schedulers.Schedulers;
+
 /**
  * The WebtrekkSDK main class, the developer/customer interacts with the SDK through this class.
  */
-public class Webtrekk implements ActivityListener.Callback {
+public class Webtrekk implements ActivityListener.Callback{
 
 
     //name of the preference strings
@@ -61,7 +69,7 @@ public class Webtrekk implements ActivityListener.Callback {
     public static String mTrackingLibraryVersionUI;
     public static String mTrackingLibraryVersion;
 
-    final private RequestFactory mRequestFactory = new RequestFactory();
+    static final private RequestFactory mRequestFactory = new RequestFactory();
     private TrackingConfiguration trackingConfiguration;
 
     private Context mContext;
@@ -72,13 +80,154 @@ public class Webtrekk implements ActivityListener.Callback {
     private ProductListTracker mProductListTracker;
     private boolean mIsInitialized;
 
+    // create observables and subscriber for status and track paramerters
+    static Subscription statusObservable ;
+    static Subscriber<? super ActivityTrackingStatus.STATUS> statusSubscriber;
+
+
+    static Subscription trackObservable ;
+    static Subscriber<? super TrackingParameter> trackSubscriber;
+
+
+    boolean isRecreationInProcess;
+    long inactivityTime;
+    String activityName;
+    ActivityTrackingStatus.STATUS status;
+
+
+    /////create observer for status
+    //// run onStartCallback in onNext
+    Observer statusObserver = new Observer<ActivityTrackingStatus.STATUS>() {
+
+        @Override
+        public void onCompleted() {
+            stop();
+        }
+
+        @Override
+        public void onError(Throwable e) {
+
+        }
+
+        @Override
+        public void onNext(ActivityTrackingStatus.STATUS status) {
+            if (mRequestFactory.getRequestUrlStore() == null || trackingConfiguration == null) {
+                WebtrekkLogging.log("webtrekk has not been initialized");
+                return ;
+            }
+
+            //reset page URL if activity is changed
+            if (!isRecreationInProcess) {
+                resetPageURLTrack();
+                mRequestFactory.setCurrentActivityName(activityName);
+            }
+
+            if(status == ActivityTrackingStatus.STATUS.FIRST_ACTIVITY_STARTED) {
+                onFirstActivityStart();
+            }
+
+            // track only if it isn't in background and session timeout isn't passed
+            if (status == ActivityTrackingStatus.STATUS.RETURNINIG_FROM_BACKGROUND){
+                if (inactivityTime > trackingConfiguration.getResendOnStartEventTime())
+                    mRequestFactory.forceNewSession();
+                mRequestFactory.restore();
+            }
+
+            autoTrackActivity();
+
+        }
+    };
+
+
+    //// create observer for TrackParameters
+    /// run onNext to get the track of the clicks and all changes the user makes
+    Observer trackObserver = new Observer<TrackingParameter>() {
+
+        @Override
+        public void onCompleted() {
+            stop();
+        }
+
+        @Override
+        public void onError(Throwable e) {
+
+        }
+
+        @Override
+        public void onNext(TrackingParameter parameters) {
+
+            if (mRequestFactory.getRequestUrlStore() == null || trackingConfiguration == null) {
+                WebtrekkLogging.log("webtrekk has not been initialized");
+                return;
+            }
+
+            if (mRequestFactory.getCurrentActivityName() == null) {
+                WebtrekkLogging.log("no running activity, call startActivity first");
+                return;
+            }
+
+            if(parameters == null) {
+                WebtrekkLogging.log("TrackingParams is null");
+                return;
+            }
+
+            boolean addCDBRequestType = false;
+
+            if (WebtrekkUserParameters.needUpdateCDBRequest(mContext)){
+
+                WebtrekkUserParameters userPar = new WebtrekkUserParameters();
+
+                if (userPar.restoreFromSettings(mContext)){
+                    parameters.add(userPar.getParameters());
+                    parameters.setCustomUserParameters(userPar.getCustomParameters());
+                    addCDBRequestType = true;
+                }
+            }
+
+            TrackingRequest request = mRequestFactory.createTrackingRequest(parameters);
+
+            if (addCDBRequestType){
+                request.setMergedRequest(TrackingRequest.RequestType.CDB);
+            }
+
+            mRequestFactory.addRequest(request);
+            mRequestFactory.setLasTrackTime(System.currentTimeMillis());
+        }
+    };
+
 
     /**
      * non public constructor to create a Webtrekk Instance as
      * makes use of the Singleton Pattern here.
+     * and initialize the status abservable and subscribe the observer
+     * and initialize the trackParamter abservable and subscribe the observer
+
      */
 
     Webtrekk() {
+
+        statusObservable = Observable.create(
+                new Observable.OnSubscribe<ActivityTrackingStatus.STATUS>() {
+                    @Override
+                    public void call(Subscriber<? super ActivityTrackingStatus.STATUS> sub) {
+                        Webtrekk.statusSubscriber = sub;
+                    }
+                })
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(statusObserver);
+
+        trackObservable = Observable.create(
+                new Observable.OnSubscribe<TrackingParameter>() {
+                    @Override
+                    public void call(Subscriber<? super TrackingParameter> sub) {
+                        Webtrekk.trackSubscriber = sub;
+                    }
+                })
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(trackObserver);
+
     }
 
     // https://en.wikipedia.org/wiki/Initialization-on-demand_holder_idiom
@@ -90,7 +239,11 @@ public class Webtrekk implements ActivityListener.Callback {
      * public method to get the singleton instance of the webtrekk object,
      * @return webtrekk instance
      */
+
+
     public static Webtrekk getInstance() {
+
+
         return SingletonHolder.webtrekk;
     }
 
@@ -244,8 +397,14 @@ public class Webtrekk implements ActivityListener.Callback {
 
             }
             // third check online for newer versions
+
+            //instead of execute the AsyncTask we will subscribe the observable
             //TODO: maybe store just the version number locally in preferences might reduce some parsing
-            new TrackingConfigurationDownloadTask(this, null).execute(trackingConfiguration.getTrackingConfigurationUrl());
+            TrackingConfigurationDownloadTask trackConfiguration = new TrackingConfigurationDownloadTask(this, null);
+            trackConfiguration.parseConfiguration(trackingConfiguration.getTrackingConfigurationUrl())
+                    .subscribeOn(Schedulers.newThread())
+                    .subscribe(trackConfiguration);
+//            new TrackingConfigurationDownloadTask(this, null).execute(trackingConfiguration.getTrackingConfigurationUrl());
         }
 
         // check if we have a valid configuration
@@ -367,47 +526,13 @@ public class Webtrekk implements ActivityListener.Callback {
 
     /**
      * allows tracking of a requests with a custom set of trackingparams
+     * and call the TrackParameter observer
      *
      * @param tp the TrackingParams for the request
      * @throws IllegalStateException when the SDK has not benn initialized, activity was not started or the trackingParameter are invalid
      */
     public void track(final TrackingParameter tp) {
-        if (mRequestFactory.getRequestUrlStore() == null || trackingConfiguration == null) {
-            WebtrekkLogging.log("webtrekk has not been initialized");
-            return;
-        }
-
-        if (mRequestFactory.getCurrentActivityName() == null) {
-            WebtrekkLogging.log("no running activity, call startActivity first");
-            return;
-        }
-
-        if(tp == null) {
-            WebtrekkLogging.log("TrackingParams is null");
-            return;
-        }
-
-        boolean addCDBRequestType = false;
-
-        if (WebtrekkUserParameters.needUpdateCDBRequest(mContext)){
-
-            WebtrekkUserParameters userPar = new WebtrekkUserParameters();
-
-            if (userPar.restoreFromSettings(mContext)){
-                tp.add(userPar.getParameters());
-                tp.setCustomUserParameters(userPar.getCustomParameters());
-                addCDBRequestType = true;
-            }
-        }
-
-        TrackingRequest request = mRequestFactory.createTrackingRequest(tp);
-
-        if (addCDBRequestType){
-            request.setMergedRequest(TrackingRequest.RequestType.CDB);
-        }
-
-        mRequestFactory.addRequest(request);
-        mRequestFactory.setLasTrackTime(System.currentTimeMillis());
+        trackSubscriber.onNext(tp);
     }
 
     /**
@@ -457,35 +582,20 @@ public class Webtrekk implements ActivityListener.Callback {
     }
 
     /**
-     * this function is be called automatically by activity flow listener
+     * this function is be called automatically by activity flow listener and call the status observer
      * @hide
      * */
+
     @Override
     public void onStart(boolean isRecreationInProcess, ActivityTrackingStatus.STATUS status,
                         long inactivityTime, String activityName) {
-        if (mRequestFactory.getRequestUrlStore() == null || trackingConfiguration == null) {
-            WebtrekkLogging.log("webtrekk has not been initialized");
-            return;
-        }
 
-        //reset page URL if activity is changed
-        if (!isRecreationInProcess) {
-            resetPageURLTrack();
-            mRequestFactory.setCurrentActivityName(activityName);
-        }
+        this.isRecreationInProcess =isRecreationInProcess;
+        this.status =status;
+        this.inactivityTime = inactivityTime;
+        this.activityName =activityName;
+        statusSubscriber.onNext(status);
 
-        if(status == ActivityTrackingStatus.STATUS.FIRST_ACTIVITY_STARTED) {
-            onFirstActivityStart();
-        }
-
-        // track only if it isn't in background and session timeout isn't passed
-        if (status == ActivityTrackingStatus.STATUS.RETURNINIG_FROM_BACKGROUND){
-            if (inactivityTime > trackingConfiguration.getResendOnStartEventTime())
-                mRequestFactory.forceNewSession();
-             mRequestFactory.restore();
-        }
-
-        autoTrackActivity();
     }
 
     /**
@@ -512,7 +622,8 @@ public class Webtrekk implements ActivityListener.Callback {
         switch (status)
         {
             case SHUT_DOWNING:
-                stop();
+                this.status=status;
+                statusSubscriber.onCompleted();
                 break;
             case GOING_TO_BACKGROUND:
                 flush();
@@ -529,7 +640,8 @@ public class Webtrekk implements ActivityListener.Callback {
     public void onDestroy(ActivityTrackingStatus.STATUS status)
     {
         if(status == ActivityTrackingStatus.STATUS.SHUT_DOWNING) {
-            stop();
+            this.status=status;
+            statusSubscriber.onCompleted();
         }
     }
 
@@ -833,5 +945,21 @@ public class Webtrekk implements ActivityListener.Callback {
      */
     public String getTrackId(){
         return getTrackingIDs().get(0);
+    }
+
+    private class OnStartActivity
+    {
+        boolean isRecreationInProcess;
+        ActivityTrackingStatus.STATUS status;
+        long inactivityTime;
+        String activityName;
+
+        OnStartActivity(  boolean isRecreationInProcess,ActivityTrackingStatus.STATUS status,long inactivityTime,String activityName)
+        {
+            this.isRecreationInProcess = isRecreationInProcess;
+            this.status = status;
+            this.inactivityTime = inactivityTime;
+            this.activityName = activityName;
+        }
     }
 }

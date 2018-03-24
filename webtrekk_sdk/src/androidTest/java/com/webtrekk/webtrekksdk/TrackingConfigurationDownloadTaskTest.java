@@ -29,6 +29,8 @@ import com.webtrekk.webtrekksdk.Configuration.TrackingConfigurationDownloadTask;
 import java.util.ArrayList;
 import java.util.List;
 
+import rx.schedulers.Schedulers;
+
 import static org.mockito.Mockito.*;
 
 public class TrackingConfigurationDownloadTaskTest extends InstrumentationTestCase implements AsyncTest {
@@ -62,7 +64,10 @@ public class TrackingConfigurationDownloadTaskTest extends InstrumentationTestCa
         TrackingConfigurationDownloadTask task = new TrackingConfigurationDownloadTask(webtrekk, asyncTest);
         task = spy(task);
         try {
-            task.execute(webtrekk.getTrackingConfiguration().getTrackingConfigurationUrl());
+            task.parseConfiguration(webtrekk.getTrackingConfiguration().getTrackingConfigurationUrl())
+                    .subscribeOn(Schedulers.newThread())
+                    .subscribe(task);
+//            task.execute(webtrekk.getTrackingConfiguration().getTrackingConfigurationUrl());
 
         } catch (Exception e) {
             fail("should never throw an exception, just use the local configuration");
@@ -83,7 +88,12 @@ public class TrackingConfigurationDownloadTaskTest extends InstrumentationTestCa
         task = spy(task);
         doReturn("foo").when(task).getXmlFromUrl("http://foourl.de/config.xml");
         try {
-            task.execute("http://nglab.org/config.xml");
+
+            task.parseConfiguration("http://nglab.org/config.xml")
+                    .subscribeOn(Schedulers.newThread())
+                    .subscribe(task);
+//
+//            task.execute("http://nglab.org/config.xml");
 
         } catch (Exception e) {
             fail("should never throw an exception, just use the local configuration");
@@ -110,7 +120,11 @@ public class TrackingConfigurationDownloadTaskTest extends InstrumentationTestCa
                 "    <version>2</version><trackDomain>http://trackingtest.nglab.org</trackDomain><trackId>12345</trackId></webtrekkConfiguration>";
         doReturn(config).when(task).getXmlFromUrl(anyString());
         try {
-            task.execute("http://nglab.org/config.xml");
+            task.parseConfiguration("http://nglab.org/config.xml")
+                    .subscribeOn(Schedulers.newThread())
+                    .subscribe(task);
+
+//            task.execute("http://nglab.org/config.xml");
 
         } catch (Exception e) {
             fail("should never throw an exception, just use the local configuration");
@@ -152,7 +166,11 @@ public class TrackingConfigurationDownloadTaskTest extends InstrumentationTestCa
 
 
         try {
-            task.execute("https://supportcenter.webtrekk.com/android_config.xml");
+            task.parseConfiguration("https://supportcenter.webtrekk.com/android_config.xml")
+                    .subscribeOn(Schedulers.newThread())
+                    .subscribe(task);
+
+//            task.execute("https://supportcenter.webtrekk.com/android_config.xml");
 
         } catch (Exception e) {
             fail("should never throw an exception, just use the local configuration");
