@@ -26,6 +26,19 @@ import android.support.annotation.Nullable;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 
+import com.webtrekk.webtrekksdk.Configuration.ActivityConfiguration;
+import com.webtrekk.webtrekksdk.Configuration.TrackingConfiguration;
+import com.webtrekk.webtrekksdk.Configuration.TrackingConfigurationDownloadTask;
+import com.webtrekk.webtrekksdk.Configuration.TrackingConfigurationXmlParser;
+import com.webtrekk.webtrekksdk.Modules.ExceptionHandler;
+import com.webtrekk.webtrekksdk.Request.RequestFactory;
+import com.webtrekk.webtrekksdk.Request.TrackingRequest;
+import com.webtrekk.webtrekksdk.TrackingParameter.Parameter;
+import com.webtrekk.webtrekksdk.Utils.ActivityListener;
+import com.webtrekk.webtrekksdk.Utils.ActivityTrackingStatus;
+import com.webtrekk.webtrekksdk.Utils.HelperFunctions;
+import com.webtrekk.webtrekksdk.Utils.WebtrekkLogging;
+
 import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.IOException;
@@ -33,18 +46,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import com.webtrekk.webtrekksdk.Modules.ExceptionHandler;
-import com.webtrekk.webtrekksdk.Request.RequestFactory;
-import com.webtrekk.webtrekksdk.Request.TrackingRequest;
-import com.webtrekk.webtrekksdk.TrackingParameter.Parameter;
-import com.webtrekk.webtrekksdk.Configuration.ActivityConfiguration;
-import com.webtrekk.webtrekksdk.Utils.ActivityListener;
-import com.webtrekk.webtrekksdk.Utils.ActivityTrackingStatus;
-import com.webtrekk.webtrekksdk.Utils.HelperFunctions;
-import com.webtrekk.webtrekksdk.Configuration.TrackingConfiguration;
-import com.webtrekk.webtrekksdk.Configuration.TrackingConfigurationDownloadTask;
-import com.webtrekk.webtrekksdk.Configuration.TrackingConfigurationXmlParser;
-import com.webtrekk.webtrekksdk.Utils.WebtrekkLogging;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.schedulers.Schedulers;
 
 /**
  * The WebtrekkSDK main class, the developer/customer interacts with the SDK through this class.
@@ -245,7 +248,11 @@ public class Webtrekk implements ActivityListener.Callback {
             }
             // third check online for newer versions
             //TODO: maybe store just the version number locally in preferences might reduce some parsing
-            new TrackingConfigurationDownloadTask(this, null).execute(trackingConfiguration.getTrackingConfigurationUrl());
+            TrackingConfigurationDownloadTask trackingConfigurationDownloadTask = new TrackingConfigurationDownloadTask(this, null);
+            trackingConfigurationDownloadTask.parseTrackingConfiguration(trackingConfiguration.getTrackingConfigurationUrl())
+                    .subscribeOn(Schedulers.newThread())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(trackingConfigurationDownloadTask);
         }
 
         // check if we have a valid configuration
