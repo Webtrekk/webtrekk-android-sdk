@@ -296,7 +296,7 @@ public class MainActivity extends AppCompatActivity {
         for (int i = 0; i < permissionsNotGranted.size(); i++) {
             if (ContextCompat.checkSelfPermission(this, permissionsNotGranted.get(i))
                     == PackageManager.PERMISSION_GRANTED) {
-                // Permission is not granted
+                // Permission is granted so remove it from the list
                 permissionsNotGranted.remove(i);
                 i--;
             }
