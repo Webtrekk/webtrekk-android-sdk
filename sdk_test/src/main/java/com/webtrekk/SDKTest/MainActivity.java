@@ -24,11 +24,13 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.os.Build;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
-import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
@@ -39,10 +41,12 @@ import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.mixpanel.android.mpmetrics.MixpanelAPI;
 import com.webtrekk.SDKTest.ProductList.ProductListActivity;
 import com.webtrekk.webtrekksdk.Webtrekk;
-import com.mixpanel.android.mpmetrics.MixpanelAPI;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import io.reactivex.Completable;
@@ -287,30 +291,43 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void permissionRequest(String permissions[], final String permissionUINames[], @Nullable  final Runnable onCompletes[]){
-        final List<Completable> completes = permissionRequest.
-                requestPermission(this, permissions);
+        List<String> permissionsNotGranted = new ArrayList<>(Arrays.asList(permissions));
 
-        for (int i = 0; i < completes.size(); i++) {
-            final Completable complete = completes.get(i);
-            final String permissionUIName = permissionUINames[i];
-            final Runnable onComplete = onCompletes == null ? null : onCompletes[i];
+        for (int i = 0; i < permissionsNotGranted.size(); i++) {
+            if (ContextCompat.checkSelfPermission(this, permissionsNotGranted.get(i))
+                    == PackageManager.PERMISSION_GRANTED) {
+                // Permission is not granted
+                permissionsNotGranted.remove(i);
+                i--;
+            }
+        }
 
-            complete.subscribeOn(Schedulers.newThread())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(new Action() {
-                        @Override
-                        public void run() throws Exception {
-                            Log.d("Permission", permissionUIName);
-                            if (onCompletes != null && onComplete != null) {
-                                onComplete.run();
+        if (permissionsNotGranted.size() > 0) {
+            final List<Completable> completes = permissionRequest.
+                    requestPermission(this, permissionsNotGranted.toArray(permissions));
+
+            for (int i = 0; i < completes.size(); i++) {
+                final Completable complete = completes.get(i);
+                final String permissionUIName = permissionUINames[i];
+                final Runnable onComplete = onCompletes == null ? null : onCompletes[i];
+
+                complete.subscribeOn(Schedulers.newThread())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(new Action() {
+                            @Override
+                            public void run() throws Exception {
+                                Log.d("Permission", permissionUIName);
+                                if (onCompletes != null && onComplete != null) {
+                                    onComplete.run();
+                                }
                             }
-                        }
-                    }, new Consumer<Throwable>() {
-                        @Override
-                        public void accept(Throwable throwable) throws Exception {
-                            Log.d("Permission", "Permission Error: " + throwable.getLocalizedMessage());
-                        }
-                    });
+                        }, new Consumer<Throwable>() {
+                            @Override
+                            public void accept(Throwable throwable) throws Exception {
+                                Log.d("Permission", "Permission Error: " + throwable.getLocalizedMessage());
+                            }
+                        });
+            }
         }
     }
 
