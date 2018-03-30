@@ -26,6 +26,19 @@ import android.support.annotation.Nullable;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 
+import com.webtrekk.webtrekksdk.Configuration.ActivityConfiguration;
+import com.webtrekk.webtrekksdk.Configuration.TrackingConfiguration;
+import com.webtrekk.webtrekksdk.Configuration.TrackingConfigurationDownloadTask;
+import com.webtrekk.webtrekksdk.Configuration.TrackingConfigurationXmlParser;
+import com.webtrekk.webtrekksdk.Modules.ExceptionHandler;
+import com.webtrekk.webtrekksdk.Request.RequestFactory;
+import com.webtrekk.webtrekksdk.Request.TrackingRequest;
+import com.webtrekk.webtrekksdk.TrackingParameter.Parameter;
+import com.webtrekk.webtrekksdk.Utils.ActivityListener;
+import com.webtrekk.webtrekksdk.Utils.ActivityTrackingStatus;
+import com.webtrekk.webtrekksdk.Utils.HelperFunctions;
+import com.webtrekk.webtrekksdk.Utils.WebtrekkLogging;
+
 import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.IOException;
@@ -33,18 +46,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import com.webtrekk.webtrekksdk.Modules.ExceptionHandler;
-import com.webtrekk.webtrekksdk.Request.RequestFactory;
-import com.webtrekk.webtrekksdk.Request.TrackingRequest;
-import com.webtrekk.webtrekksdk.TrackingParameter.Parameter;
-import com.webtrekk.webtrekksdk.Configuration.ActivityConfiguration;
-import com.webtrekk.webtrekksdk.Utils.ActivityListener;
-import com.webtrekk.webtrekksdk.Utils.ActivityTrackingStatus;
-import com.webtrekk.webtrekksdk.Utils.HelperFunctions;
-import com.webtrekk.webtrekksdk.Configuration.TrackingConfiguration;
-import com.webtrekk.webtrekksdk.Configuration.TrackingConfigurationDownloadTask;
-import com.webtrekk.webtrekksdk.Configuration.TrackingConfigurationXmlParser;
-import com.webtrekk.webtrekksdk.Utils.WebtrekkLogging;
+import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.Observer;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
 
 /**
  * The WebtrekkSDK main class, the developer/customer interacts with the SDK through this class.
@@ -72,6 +80,15 @@ public class Webtrekk implements ActivityListener.Callback {
     private ProductListTracker mProductListTracker;
     private boolean mIsInitialized;
 
+    // Observables and Emitters used to keep track of the tracking status
+    private static Observable statusObservable;
+    private static ObservableEmitter<? super ActivityTrackingStatus.STATUS> statusEmitter;
+    private static Observable trackObservable;
+    private static ObservableEmitter<? super TrackingParameter> trackingEmitter;
+    private String contextName;
+    private ActivityTrackingStatus.STATUS status;
+    private boolean inProcess;
+    private long contextTime;
 
     /**
      * non public constructor to create a Webtrekk Instance as
@@ -79,6 +96,118 @@ public class Webtrekk implements ActivityListener.Callback {
      */
 
     Webtrekk() {
+        Observer statusObserver = new Observer<ActivityTrackingStatus.STATUS>() {
+            @Override
+            public void onError(Throwable e) {
+
+            }
+
+            @Override
+            public void onNext(ActivityTrackingStatus.STATUS status) {
+                if (mRequestFactory.getRequestUrlStore() == null || trackingConfiguration == null) {
+                    return;
+                }
+
+                if (!inProcess) {
+                    resetPageURLTrack();
+                    mRequestFactory.setCurrentActivityName(contextName);
+                }
+
+                if (status == ActivityTrackingStatus.STATUS.FIRST_ACTIVITY_STARTED) {
+                    onFirstActivityStart();
+                }
+
+                if (status == ActivityTrackingStatus.STATUS.RETURNINIG_FROM_BACKGROUND) {
+                    if (contextTime > trackingConfiguration.getResendOnStartEventTime())
+                        mRequestFactory.forceNewSession();
+                    mRequestFactory.restore();
+                }
+
+                autoTrackActivity();
+            }
+
+            @Override
+            public void onSubscribe(Disposable d) {
+
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+        };
+
+        Observer trackObserver = new Observer<TrackingParameter>() {
+            @Override
+            public void onError(Throwable e) {
+
+            }
+
+            @Override
+            public void onNext(TrackingParameter parameters) {
+                if (mRequestFactory.getRequestUrlStore() == null || trackingConfiguration == null) {
+                    return;
+                }
+
+                if (mRequestFactory.getCurrentActivityName() == null) {
+                    return;
+                }
+
+                if (parameters == null) {
+                    return;
+                }
+
+                boolean addCDBRequestType = false;
+                if (WebtrekkUserParameters.needUpdateCDBRequest(mContext)) {
+
+                    WebtrekkUserParameters userPar = new WebtrekkUserParameters();
+                    if (userPar.restoreFromSettings(mContext)) {
+                        parameters.add(userPar.getParameters());
+                        parameters.setCustomUserParameters(userPar.getCustomParameters());
+                        addCDBRequestType = true;
+                    }
+                }
+
+                TrackingRequest request = mRequestFactory.createTrackingRequest(parameters);
+
+                if (addCDBRequestType) {
+                    request.setMergedRequest(TrackingRequest.RequestType.CDB);
+                }
+
+                mRequestFactory.addRequest(request);
+                mRequestFactory.setLasTrackTime(System.currentTimeMillis());
+            }
+
+            @Override
+            public void onSubscribe(Disposable d) {
+
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+        };
+
+        statusObservable = Observable.create(new ObservableOnSubscribe<ActivityTrackingStatus.STATUS>() {
+            @Override
+            public void subscribe(ObservableEmitter<ActivityTrackingStatus.STATUS> emitter) throws Exception {
+                statusEmitter = emitter;
+            }
+        }).subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread());
+
+        statusObservable.subscribe(statusObserver);
+
+        trackObservable = Observable.create(new ObservableOnSubscribe<TrackingParameter>() {
+            @Override
+            public void subscribe(ObservableEmitter<TrackingParameter> emitter) throws Exception {
+                trackingEmitter = emitter;
+            }
+        }).subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread());
+
+        trackObservable.subscribe(trackObserver);
     }
 
     // https://en.wikipedia.org/wiki/Initialization-on-demand_holder_idiom
@@ -99,7 +228,6 @@ public class Webtrekk implements ActivityListener.Callback {
      * application starts, for example in the Application Class or the Main Activitys onCreate.
      * Use R.raw.webtrekk_config as default configID
      * @param app application instance
-     *
      */
     final public void initWebtrekk(final Application app)
     {
@@ -111,7 +239,6 @@ public class Webtrekk implements ActivityListener.Callback {
      * application starts, for example in the Application Class or the Main Activitys onCreate.
      * @param app application instance
      * @param configResourceID id of config resource
-     *
      */
     final public void initWebtrekk(final Application app, int configResourceID) {
         if (app == null) {
@@ -127,8 +254,6 @@ public class Webtrekk implements ActivityListener.Callback {
      * this initializes the webtrekk tracking configuration, it has to be called only once when the
      * application starts, for example in the Application Class or the Main Activitys onCreate.
      * Use R.raw.webtrekk_config as default configID
-     * @param c
-     *
      */
     void initWebtrekk(final Context c)
     {
@@ -245,7 +370,11 @@ public class Webtrekk implements ActivityListener.Callback {
             }
             // third check online for newer versions
             //TODO: maybe store just the version number locally in preferences might reduce some parsing
-            new TrackingConfigurationDownloadTask(this, null).execute(trackingConfiguration.getTrackingConfigurationUrl());
+            TrackingConfigurationDownloadTask trackConfiguration = new TrackingConfigurationDownloadTask(this, null);
+            trackConfiguration.parseTrackingConfiguration(trackingConfiguration.getTrackingConfigurationUrl())
+                    .subscribeOn(Schedulers.newThread())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe();
         }
 
         // check if we have a valid configuration
@@ -324,8 +453,6 @@ public class Webtrekk implements ActivityListener.Callback {
     }
 
     /**
-     * @deprecated
-     * Don't call this function. If you need override page name call {@link Webtrekk#setCustomPageName(String)} instead
      * @param currentActivityName
      */
     public void setCurrentActivityName(String currentActivityName) {
@@ -372,42 +499,9 @@ public class Webtrekk implements ActivityListener.Callback {
      * @throws IllegalStateException when the SDK has not benn initialized, activity was not started or the trackingParameter are invalid
      */
     public void track(final TrackingParameter tp) {
-        if (mRequestFactory.getRequestUrlStore() == null || trackingConfiguration == null) {
-            WebtrekkLogging.log("webtrekk has not been initialized");
-            return;
+        if (trackingEmitter != null) {
+            trackingEmitter.onNext(tp);
         }
-
-        if (mRequestFactory.getCurrentActivityName() == null) {
-            WebtrekkLogging.log("no running activity, call startActivity first");
-            return;
-        }
-
-        if(tp == null) {
-            WebtrekkLogging.log("TrackingParams is null");
-            return;
-        }
-
-        boolean addCDBRequestType = false;
-
-        if (WebtrekkUserParameters.needUpdateCDBRequest(mContext)){
-
-            WebtrekkUserParameters userPar = new WebtrekkUserParameters();
-
-            if (userPar.restoreFromSettings(mContext)){
-                tp.add(userPar.getParameters());
-                tp.setCustomUserParameters(userPar.getCustomParameters());
-                addCDBRequestType = true;
-            }
-        }
-
-        TrackingRequest request = mRequestFactory.createTrackingRequest(tp);
-
-        if (addCDBRequestType){
-            request.setMergedRequest(TrackingRequest.RequestType.CDB);
-        }
-
-        mRequestFactory.addRequest(request);
-        mRequestFactory.setLasTrackTime(System.currentTimeMillis());
     }
 
     /**
@@ -463,29 +557,15 @@ public class Webtrekk implements ActivityListener.Callback {
     @Override
     public void onStart(boolean isRecreationInProcess, ActivityTrackingStatus.STATUS status,
                         long inactivityTime, String activityName) {
-        if (mRequestFactory.getRequestUrlStore() == null || trackingConfiguration == null) {
-            WebtrekkLogging.log("webtrekk has not been initialized");
-            return;
+
+        this.inProcess = isRecreationInProcess;
+        this.status = status;
+        this.contextTime = inactivityTime;
+        this.contextName = activityName;
+        if (statusEmitter != null) {
+            statusEmitter.onNext(status);
         }
 
-        //reset page URL if activity is changed
-        if (!isRecreationInProcess) {
-            resetPageURLTrack();
-            mRequestFactory.setCurrentActivityName(activityName);
-        }
-
-        if(status == ActivityTrackingStatus.STATUS.FIRST_ACTIVITY_STARTED) {
-            onFirstActivityStart();
-        }
-
-        // track only if it isn't in background and session timeout isn't passed
-        if (status == ActivityTrackingStatus.STATUS.RETURNINIG_FROM_BACKGROUND){
-            if (inactivityTime > trackingConfiguration.getResendOnStartEventTime())
-                mRequestFactory.forceNewSession();
-             mRequestFactory.restore();
-        }
-
-        autoTrackActivity();
     }
 
     /**
@@ -512,7 +592,8 @@ public class Webtrekk implements ActivityListener.Callback {
         switch (status)
         {
             case SHUT_DOWNING:
-                stop();
+                this.status = status;
+                statusEmitter.onComplete();
                 break;
             case GOING_TO_BACKGROUND:
                 flush();
@@ -526,10 +607,10 @@ public class Webtrekk implements ActivityListener.Callback {
      * as in some cases stop isn't called during application showt down.
      */
     @Override
-    public void onDestroy(ActivityTrackingStatus.STATUS status)
-    {
-        if(status == ActivityTrackingStatus.STATUS.SHUT_DOWNING) {
-            stop();
+    public void onDestroy(ActivityTrackingStatus.STATUS status) {
+        if (status == ActivityTrackingStatus.STATUS.SHUT_DOWNING) {
+            this.status = status;
+            statusEmitter.onComplete();
         }
     }
 
@@ -672,7 +753,6 @@ public class Webtrekk implements ActivityListener.Callback {
 
     /**
      * this method alles the customer to set the custom parameters map
-     *
      */
     public void setCustomParameter(Map<String, String> customParameter) {
         mRequestFactory.setCustomParameter(customParameter);
@@ -776,7 +856,7 @@ public class Webtrekk implements ActivityListener.Callback {
             return;
         }
 
-        final String everId = HelperFunctions.getEverId(mContext);;
+        final String everId = HelperFunctions.getEverId(mContext);
 
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
             webView.addJavascriptInterface(new AndroidWebViewCallback(mContext), "WebtrekkAndroidWebViewCallback");
@@ -786,7 +866,6 @@ public class Webtrekk implements ActivityListener.Callback {
     }
 
     /**
-     * @hide
      * @return
      */
     public TrackingConfiguration getTrackingConfiguration() {
@@ -794,7 +873,6 @@ public class Webtrekk implements ActivityListener.Callback {
     }
 
     /**
-     * @hide
      * @param trackingConfiguration
      */
     public void setTrackingConfiguration(TrackingConfiguration trackingConfiguration) {
@@ -803,7 +881,6 @@ public class Webtrekk implements ActivityListener.Callback {
     }
 
     /**
-     * @hide
      * @param context
      */
     private void initVersions(Context context)
@@ -828,7 +905,6 @@ public class Webtrekk implements ActivityListener.Callback {
     public boolean isEnableRemoteConfiguration() { return trackingConfiguration.isEnableRemoteConfiguration(); }
 
     /**
-     * @deprecated use {@link #getTrackingIDs()} instead
      * @return
      */
     public String getTrackId(){

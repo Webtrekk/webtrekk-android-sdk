@@ -20,16 +20,12 @@ package com.webtrekk.webtrekksdk.Configuration;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.os.AsyncTask;
-import android.preference.PreferenceManager;
 
 import com.webtrekk.webtrekksdk.Request.RequestProcessor;
 import com.webtrekk.webtrekksdk.Utils.AsyncTest;
 import com.webtrekk.webtrekksdk.Utils.HelperFunctions;
 import com.webtrekk.webtrekksdk.Utils.WebtrekkLogging;
 import com.webtrekk.webtrekksdk.Webtrekk;
-
-import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -39,12 +35,20 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
+import java.util.concurrent.Callable;
+
+import io.reactivex.Observable;
+import io.reactivex.Observer;
+import io.reactivex.disposables.Disposable;
 
 /**
- * This classe downloads the xml configuration from the configured remote url,
+ * This class downloads the xml configuration from the configured remote url,
  * it runs asynchronous in the background during application start if enabled
+ *
+ * The class implements the Observer pattern rather than AsyncTask, for easier and better handling
+ * out of UI thread.
  */
-public class TrackingConfigurationDownloadTask extends AsyncTask<String, Void, TrackingConfiguration> {
+public class TrackingConfigurationDownloadTask implements Observer<TrackingConfiguration> {
     private Context context;
     private Webtrekk webtrekk;
     private TrackingConfiguration trackingConfiguration;
@@ -60,56 +64,40 @@ public class TrackingConfigurationDownloadTask extends AsyncTask<String, Void, T
     }
 
     /**
-     * runs in the background and downloads and parses the xmlconfigration from the configured remoteurl
+     * Function which parse the tracking configuration from xml, returning an Observable
+     * which emitting the parsed value in onNext
      *
-     * @param urls
-     * @return
+     * @param trackingUrl string of the tracking url
+     * @return Observable of the TrackingConfiguration
      */
-    @Override
-    protected TrackingConfiguration doInBackground(String... urls) {
-        WebtrekkLogging.log("trying to get remote configuration url: " + urls[0]);
-        // Instantiate the parser
-        TrackingConfigurationXmlParser trackingConfigurationParser = new TrackingConfigurationXmlParser();
-        //stream = downloadUrl(urls[0]);
+    public Observable<TrackingConfiguration> parseTrackingConfiguration(final String trackingUrl) {
+        return Observable.fromCallable(new Callable<TrackingConfiguration>() {
+            @Override
+            public TrackingConfiguration call() throws Exception {
+                TrackingConfigurationXmlParser trackingConfigurationXmlParser = new TrackingConfigurationXmlParser();
 
-        try {
-            trackingConfigurationString = getXmlFromUrl(urls[0]);
-            WebtrekkLogging.log("remote configuration string: " + trackingConfigurationString);
-            if (trackingConfigurationString != null) {
-                trackingConfiguration = trackingConfigurationParser.parse(trackingConfigurationString);
-                return trackingConfiguration;
-            } else {
-                WebtrekkLogging.log("error getting the xml configuration string from url: " + urls[0]);
+                trackingConfigurationString = getXmlFromUrl(trackingUrl);
+
+                if (trackingConfigurationString != null) {
+                    trackingConfiguration = trackingConfigurationXmlParser.parse(trackingConfigurationString);
+                    return trackingConfiguration;
+                }
+
+                WebtrekkLogging.log("Error parsing the xml: " + trackingUrl);
+                return null;
             }
-
-            // Makes sure that the InputStream is closed after the app is
-            // finished using it.
-        } catch (IOException e) {
-            WebtrekkLogging.log("xml parser error, ioexception", e);
-        } catch (XmlPullParserException e) {
-            WebtrekkLogging.log("xml parser error, no validate xml configuration file", e);
-        } catch (Exception e) {
-            WebtrekkLogging.log("error getting remove configuration", e);
-        }
-
-        return null;
+        });
     }
 
-    /**
-     * this method gets called when the doInBackground method is finished it replaces the current
-     * TrackingConfiguration with a newer one if one was found online, and also store it in the shared prefs
-     *
-     * @param config
-     */
     @Override
-    protected void onPostExecute(TrackingConfiguration config) {
-        if (config == null) {
+    public void onNext(TrackingConfiguration trackingConfiguration) {
+        if (trackingConfiguration == null) {
             WebtrekkLogging.log("error getting a new valid configuration from remote url, tracking with the old config");
         } else {
             WebtrekkLogging.log("successful downloaded remote configuration");
 
-            if (config.getVersion() > webtrekk.getTrackingConfiguration().getVersion()) {
-                if(config.validateConfiguration()) {
+            if (trackingConfiguration.getVersion() > webtrekk.getTrackingConfiguration().getVersion()) {
+                if(trackingConfiguration.validateConfiguration()) {
                     WebtrekkLogging.log("found a new version online, updating current version");
                     // either store it as xml on the internal storage or save it as xml string in the shared prefs
                     WebtrekkLogging.log("saving new trackingConfiguration to preferences");
@@ -132,7 +120,19 @@ public class TrackingConfigurationDownloadTask extends AsyncTask<String, Void, T
             asyncTest.workDone();
             WebtrekkLogging.log("asyncTest: workdDone()");
         }
+    }
 
+    @Override
+    public void onComplete() {
+    }
+
+    @Override
+    public void onSubscribe(Disposable d) {
+    }
+
+    @Override
+    public void onError(Throwable e) {
+        WebtrekkLogging.log("Error in parsing the xml: " + e.toString());
     }
 
     /**
