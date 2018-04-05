@@ -18,29 +18,37 @@
 
 package com.webtrekk.webtrekksdk.Request;
 
-import com.webtrekk.webtrekksdk.Request.RequestUrlStore;
+import android.util.Log;
+
 import com.webtrekk.webtrekksdk.Utils.WebtrekkLogging;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.io.InterruptedIOException;
 import java.net.HttpURLConnection;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.util.concurrent.Callable;
+
+import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.ObservableSource;
+import io.reactivex.observers.DisposableObserver;
 
 /**
  * this class sends the requests to the server
  * it handles just the networking tasks
  * @hide
  */
-public class RequestProcessor implements Runnable {
+public class RequestProcessor {
 
     public static final int NETWORK_CONNECTION_TIMEOUT = 60 * 1000;  // 1 minute
     static final int NETWORK_READ_TIMEOUT = 60 * 1000;  // 1 minute
 
     private final RequestUrlStore mRequestUrlStore;
+
 
     public interface ProcessOutputCallback
     {
@@ -88,8 +96,6 @@ public class RequestProcessor implements Runnable {
         try {
             connection = getUrlConnection(url);
 
-            if (Thread.interrupted())
-                throw new InterruptedException();
 
             connection.setRequestMethod("GET");
             connection.setConnectTimeout(NETWORK_CONNECTION_TIMEOUT);
@@ -118,8 +124,6 @@ public class RequestProcessor implements Runnable {
         } catch (IOException e) {
             WebtrekkLogging.log("io exception: can not connect to host", e);
             WebtrekkLogging.log("RequestProcessor: IO > Removing URL from queue because exception cannot be handled.", e);
-        } catch (InterruptedException e) {
-            throw new InterruptedException();
         } catch (Exception e) {
             // we don't know how to resolve these - cannot retry
             WebtrekkLogging.log("RequestProcessor: Removing URL from queue because exception cannot be handled.", e);
@@ -133,46 +137,22 @@ public class RequestProcessor implements Runnable {
         return -1;
     }
 
+    public Observable<Integer> getResponseCode(){
 
-    @Override
-    public void run() {
-        while (mRequestUrlStore.size() > 0) {
+        final String urlString = mRequestUrlStore.peek();
+        final URL url = getUrl(urlString);
+        if (url == null) {
+            WebtrekkLogging.log("Removing invalid URL '" + urlString + "' from queue. remaining: " + mRequestUrlStore.size());
+            mRequestUrlStore.removeLastURL();
 
-            Thread.yield();
-            if (Thread.interrupted())
-                break;
-
-            final String urlString = mRequestUrlStore.peek();
-            final URL url = getUrl(urlString);
-            if (url == null) {
-                WebtrekkLogging.log("Removing invalid URL '" + urlString + "' from queue. remaining: " + mRequestUrlStore.size());
-                mRequestUrlStore.removeLastURL();
-                continue;
-            }
-
-
-            try {
-                final int statusCode;
-                statusCode = sendRequest(url, null);
-                WebtrekkLogging.log("received status " + statusCode);
-                if (statusCode >= 200 && statusCode < 400) {
-                    //successful send, remove url from store
-                    mRequestUrlStore.removeLastURL();
-                } else if (statusCode >= 500 && statusCode < 600) {
-                    //try to send later
-                    break;
-                } else{ //400-499 case
-                    WebtrekkLogging.log("removing URL from queue as status code is between 400 and 499 or unexpected.");
-                    mRequestUrlStore.removeLastURL();
-                }
-            } catch (InterruptedException e) {
-                // thread is interrupted exit from run loop
-                break;
-            }
         }
+       return Observable.create(new ObservableOnSubscribe<Integer>() {
+           @Override
+           public void subscribe(ObservableEmitter<Integer> e) throws Exception {
 
-        if (mRequestUrlStore.size() == 0)
-            mRequestUrlStore.deleteRequestsFile();
-        WebtrekkLogging.log("Processing URL task is finished");
+               e.onNext(sendRequest(url,null));
+           }
+       });
     }
+
 }
