@@ -21,6 +21,7 @@ package com.webtrekk.webtrekksdk.Request;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Handler;
+import android.util.Log;
 
 import com.webtrekk.webtrekksdk.Configuration.ActivityConfiguration;
 import com.webtrekk.webtrekksdk.Modules.AppinstallGoal;
@@ -42,6 +43,10 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+
+import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.observers.DisposableObserver;
+import io.reactivex.schedulers.Schedulers;
 
 /**
  * Class should incapsulate all request data operation and data
@@ -101,6 +106,8 @@ public class RequestFactory {
     volatile private long mLastTrackTime;
     private ScheduledExecutorService mFlashTimerService;
     private ScheduledFuture<?> mFlashTimerFuture;
+    private final CompositeDisposable disposables = new CompositeDisposable();
+
 
 
     public void init(Context context, TrackingConfiguration trackingConfiguration, Webtrekk wt)
@@ -446,6 +453,7 @@ public class RequestFactory {
     public void restore()
     {
         mRequestUrlStore.reset();
+        disposables.clear();
         // remove the old backupfile after the requests are loaded into memory/requestUrlStore
         //mRequestUrlStore.deleteRequestsFile();
     }
@@ -682,25 +690,51 @@ public class RequestFactory {
      * @return true if send is done and false if previous send is still in progress or there is no message to send
      */
     public boolean onSendIntervalOver() {
-        //WebtrekkLogging.log("onSendIntervalOver: request urls: " + mRequestUrlStore.size()
-                //+ " thread done:"+(mRequestProcessorFuture == null ? "null": mRequestProcessorFuture.isDone()));
-        if(mRequestUrlStore.size() > 0  && (mRequestProcessorFuture == null || mRequestProcessorFuture.isDone())) {
-            if (mExecutorService == null) {
-                // use daemon thread.
-                mExecutorService = Executors.newSingleThreadExecutor(new ThreadFactory() {
+//        WebtrekkLogging.log("onSendIntervalOver: request urls: " + mRequestUrlStore.size()
+//                + " thread done:"+(mRequestProcessorFuture == null ? "null": mRequestProcessorFuture.isDone()));
+        Log.i("SIZEE", String.valueOf(mRequestUrlStore.size()));
+        if(mRequestUrlStore.size() == 0){
+            disposables.clear();
+        }
+        if(mRequestUrlStore.size() > 0 ) {
+            disposables.add(new RequestProcessor(mRequestUrlStore).getResponseCode().subscribeOn(Schedulers.io())
+                    .subscribeWith(new DisposableObserver<Integer>() {
+                        @Override
+                        public void onNext(Integer integer) {
+                            WebtrekkLogging.log("received status " + integer);
+                            if (integer >= 200 && integer < 400) {
+                                //successful send, remove url from store
+                                mRequestUrlStore.removeLastURL();
 
-                    @Override
-                    public Thread newThread(Runnable r) {
-                        Thread t = Executors.defaultThreadFactory().newThread(r);
-                        t.setDaemon(true);
-                        return t;
-                    }
-                });
-            }
-            mRequestProcessorFuture = mExecutorService.submit(new RequestProcessor(mRequestUrlStore));
+                            } else if (integer >= 500 && integer < 600) {
+                                //try to send later
+                                Log.e("statusCodee", String.valueOf(integer));
+
+                            } else{ //400-499 case
+                                WebtrekkLogging.log("removing URL from queue as status code is between 400 and 499 or unexpected.");
+                                mRequestUrlStore.removeLastURL();
+                            }
+                        }
+
+                        @Override
+                        public void onError(Throwable e) {
+                            Log.e("ERRORR",e.toString());
+                        }
+
+                        @Override
+                        public void onComplete() {
+                            if (mRequestUrlStore.size() == 0)
+                                mRequestUrlStore.deleteRequestsFile();
+                            WebtrekkLogging.log("Processing URL task is finished");
+
+                        }
+                    }));
             return true;
-        }else
-            return false;
+        }else{
+            return  false;
+        }
+
+
     }
 
     private void flashByTimeout()
@@ -713,20 +747,7 @@ public class RequestFactory {
 
     public void stopSendURLProcess()
     {
-        if (mRequestProcessorFuture != null && !mRequestProcessorFuture.isDone()) {
-            mRequestProcessorFuture.cancel(true);
-            mExecutorService.shutdownNow();
-            try {
-                // waiting for 4 seconds to avoid ANR
-                WebtrekkLogging.log("Start waiting for send URL thread to stop");
-                boolean isTerminated = mExecutorService.awaitTermination(4, TimeUnit.SECONDS);
-                WebtrekkLogging.log("Stop to wait for send URL thread. Process stopped result is:"+isTerminated);
-            } catch (InterruptedException e) {
-                WebtrekkLogging.log("Can't terminate sending process");
-            }
-            mExecutorService = null;
-            WebtrekkLogging.log("Processing URL is canceled");
-        }
+        disposables.clear();
     }
 
     public void setLasTrackTime(long lasTrackTime) {

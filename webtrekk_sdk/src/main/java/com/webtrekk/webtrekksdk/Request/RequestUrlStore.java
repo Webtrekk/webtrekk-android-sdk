@@ -20,6 +20,7 @@ package com.webtrekk.webtrekksdk.Request;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.util.Log;
 import android.util.LruCache;
 
 import com.webtrekk.webtrekksdk.Utils.HelperFunctions;

@@ -43,9 +43,11 @@ public class PermissionRequest {
                 completables.add(Completable.complete());
             }
         }
+        if(permissionsResult.size() > 0){
+            ActivityCompat.requestPermissions(activity,
+                    permissionsResult.toArray(new String[permissionsResult.size()]), PERMISSION_REQUEST);
+        }
 
-        ActivityCompat.requestPermissions(activity,
-                permissionsResult.toArray(new String[permissionsResult.size()]), PERMISSION_REQUEST);
 
         return completables;
     }
