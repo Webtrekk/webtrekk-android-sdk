@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8"?>
+<webtrekkConfiguration>
+    <!--the version number for this configuration file -->
+    <version>3</version>
+    <!--the webtrekk trackDomain where the requests are send -->
+    <trackDomain type="text">http://trackingtest.nglab.org</trackDomain>
+    <!--customers trackid -->
+    <trackId type="text">1111111111112</trackId>
+    <!-- measure only a subset of the users -->
+    <sampling type="text">0</sampling>
+    <!-- interval between the requests are send in seconds -->
+    <sendDelay type="text">30</sendDelay>
+    <!--maximum amoount of requests to store when the user is offline -->
+    <maxRequests type="number">4000</maxRequests>
+
+    <!--optional settings -->
+    <!--automaticly track activities onStart method -->
+    <autoTracked>true</autoTracked>
+
+
+    <!--track if there was an application update -->
+    <autoTrackAppUpdate>true</autoTrackAppUpdate>
+    <!--track the advertiser id -->
+    <autoTrackAdvertiserId>true</autoTrackAdvertiserId>
+    <!--track the app versions name -->
+    <autoTrackAppVersionName>true</autoTrackAppVersionName>
+    <!--track the app versions code -->
+    <autoTrackAppVersionCode>true</autoTrackAppVersionCode>
+    <!--track if the app was already installed -->
+    <autoTrackAppPreInstalled>true</autoTrackAppPreInstalled>
+    <!--track the playstore username, requires special permissions! -->
+    <autoTrackPlaystoreUsername>false</autoTrackPlaystoreUsername>
+    <!--track the playstore email, requires special permissions! -->
+    <autoTrackPlaystoreMail>true</autoTrackPlaystoreMail>
+    <!--track the playstore given name, requires special permissions! -->
+    <autoTrackPlaystoreGivenName>true</autoTrackPlaystoreGivenName>
+    <!--track the playstore family name, requires special permissions! -->
+    <autoTrackPlaystoreFamilyName>true</autoTrackPlaystoreFamilyName>
+    <!--track the supported api level of the device, requires special permissions! -->
+    <autoTrackApiLevel>false</autoTrackApiLevel>
+    <!--track the devices screen orientation -->
+    <autoTrackScreenOrientation>true</autoTrackScreenOrientation>
+    <!--track the current connection type -->
+    <autoTrackConnectionType>true</autoTrackConnectionType>
+    <!--track if the user has opted out for advertisement on google plays -->
+    <autoTrackAdvertisementOptOut>true</autoTrackAdvertisementOptOut>
+
+
+    <!--enables the remote xml configuration -->
+    <enableRemoteConfiguration>false</enableRemoteConfiguration>
+    <!--url of the remote configuration -->
+    <trackingConfigurationUrl>http://remotehost/tracking_config.xml</trackingConfigurationUrl>
+    <!--sends the size of the current locally stored urls in a custom parameter -->
+    <autoTrackRequestUrlStoreSize>true</autoTrackRequestUrlStoreSize>
+    <!--resend onStart time, this is the timeout for auto tracked sessions in case an activity was paused -->
+    <resendOnStartEventTime>30</resendOnStartEventTime>
+    <!--enable or disable exception logging. By default is disabled -->
+    <errorLogEnable>true</errorLogEnable>
+    <!--set log level: 1 only fatal, 2 fatal and caught, 3 everything (default = 3) -->
+    <errorLogLevel>3</errorLogLevel>
+
+    <!--custom parameter -->
+    <customParameter>
+        <parameter id="test_customer_parameter_key1">value1</parameter>
+        <parameter id="test_customer_parameter_key2">value2</parameter>
+        <parameter id="test_customer_parameter_key3">value3</parameter>
+    </customParameter>
+
+
+
+    <!--global tracking parameter -->
+    <globalTrackingParameter>
+        <!--define global tracking parameter which are send with every request, the key has to match a valid parameter name!
+        entries made here are available as default parameters in the trackingparameter instance -->
+        <parameter id="PRODUCT">test_product</parameter>
+        <parameter id="PRODUCT_COST">443</parameter>
+        <!--define the global page parameter, the key is the index,  -->
+        <pageParameter>
+            <parameter id="1">test_pageparam1</parameter>
+            <parameter id="2">test_pageparam2</parameter>
+            <parameter id="3">test_pageparam3</parameter>
+        </pageParameter>
+        <sessionParameter>
+            <parameter id="1">test_sessionparam1</parameter>
+        </sessionParameter>
+        <ecomParameter>
+            <parameter id="1">test_ecomparam1</parameter>
+        </ecomParameter>
+        <userCategories>
+            <parameter id="1">test_usercategory1</parameter>
+        </userCategories>
+        <pageCategories>
+            <parameter id="1">test_pagecategory1</parameter>
+        </pageCategories>
+        <adParameter>
+            <parameter id="1">test_adparam</parameter>
+        </adParameter>
+        <actionParameter>
+            <parameter id="1">test_actionparam1</parameter>
+        </actionParameter>
+        <productCategories>
+            <parameter id="1">test_productcategory1</parameter>
+        </productCategories>
+        <mediaCategories>
+            <parameter id="1">test_mediacategory1</parameter>
+        </mediaCategories>
+
+    </globalTrackingParameter>
+
+
+
+    <!--activity configurations -->
+    <screen>
+        <classname type="text">test.myapplication.MainActivity</classname>
+        <mappingname type="text">Startseite</mappingname>
+        <autoTracked type="text">true</autoTracked>
+        <!--activity tracking parameter -->
+        <screenTrackingParameter>
+            <!--define global tracking parameter which are send with every request, the key has to match a valid parameter name!
+            entries made here are available as default parameters in the trackingparameter instance -->
+            <parameter id="PRODUCT">test_product</parameter>
+            <parameter id="PRODUCT_COST">443</parameter>
+            <parameter id="PAGE_URL">http://www.yandex.ru</parameter>
+            <!--define the global page parameter, the key is the index,  -->
+            <pageParameter>
+                <parameter id="1">test_pageparam1</parameter>
+                <parameter id="2">test_pageparam2</parameter>
+                <parameter id="3">test_pageparam3</parameter>
+            </pageParameter>
+            <sessionParameter>
+                <parameter id="1">test_sessionparam1</parameter>
+            </sessionParameter>
+            <ecomParameter>
+                <parameter id="1">test_ecomparam1</parameter>
+            </ecomParameter>
+            <userCategories>
+                <parameter id="1">test_usercategory1</parameter>
+            </userCategories>
+            <pageCategories>
+                <parameter id="1">test_pagecategory1</parameter>
+            </pageCategories>
+            <adParameter>
+                <parameter id="1">test_adparam</parameter>
+            </adParameter>
+            <actionParameter>
+                <parameter id="1">test_actionparam1</parameter>
+            </actionParameter>
+            <productCategories>
+                <parameter id="1">test_productcategory1</parameter>
+            </productCategories>
+            <mediaCategories>
+                <parameter id="1">test_mediacategory1</parameter>
+                <parameter id="1" key="mediacategory_from_app"></parameter>
+            </mediaCategories>
+
+        </screenTrackingParameter>
+    </screen>
+    <screen>
+    <classname type="text">test.myapplication.OtherActivity</classname>
+        <autoTracked type="text">true</autoTracked>
+        <mappingname type="text">Startseite</mappingname>
+    </screen>
+</webtrekkConfiguration>

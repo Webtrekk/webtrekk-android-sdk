@@ -1,0 +1,90 @@
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
+    android:layout_height="match_parent" android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    android:paddingBottom="@dimen/activity_vertical_margin" tools:context=".MainActivity">
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true">
+
+        <TextView
+            android:id="@+id/main_version"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center" />
+
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Page Example"
+            android:id="@+id/button_page"
+            android:layout_gravity="center_horizontal"
+            android:enabled="true"
+            android:onClick="showPageExampleActivity" />
+
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Shop Example"
+            android:id="@+id/button_shop"
+            android:layout_gravity="center_horizontal"
+            android:onClick="showShopExampleActivity" />
+
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Media Example"
+            android:id="@+id/button_media"
+            android:layout_gravity="center_horizontal"
+            android:onClick="showMediaExampleActivity" />
+
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="CDB test"
+            android:layout_gravity="center_horizontal"
+            android:onClick="sendCDBRequest" />
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Recommendations test"
+            android:layout_gravity="center_horizontal"
+            android:onClick="recommendationTest" />
+
+        <Button
+            android:id="@+id/adclear_button_id"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="AdClear test"
+            android:layout_gravity="center_horizontal"
+            android:onClick="adClearTest" />
+
+        <Button
+            android:id="@+id/show_productList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Show Product List"
+            android:layout_gravity="center_horizontal"
+            android:onClick="productList" />
+
+        <Button
+            android:id="@+id/show_webview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Show Web View"
+            android:layout_gravity="center_horizontal"
+            android:onClick="appToWebConnection" />
+
+        <WebView
+            android:id="@+id/main_web_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone"/>
+    </LinearLayout>
+
+</ScrollView>

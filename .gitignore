@@ -1,0 +1,6 @@
+local.properties
+.gradle
+/.idea
+.DS_Store
+/build
+sdk_test-parent.iml

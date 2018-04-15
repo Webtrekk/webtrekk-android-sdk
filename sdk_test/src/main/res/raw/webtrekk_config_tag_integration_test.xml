@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<webtrekkConfiguration>
+    <version>1</version>
+    <trackId>123451234512345</trackId>
+    <trackDomain>http://localhost:8080</trackDomain>
+    <sampling>0</sampling>
+    <sendDelay>10</sendDelay>
+    <maxRequests>5000</maxRequests>
+    <resendOnStartEventTime>30</resendOnStartEventTime>
+    <autoTracked>true</autoTracked>
+    <autoTrackAppUpdate>true</autoTrackAppUpdate>
+    <autoTrackAdvertiserId>true</autoTrackAdvertiserId>
+    <autoTrackAppVersionName>true</autoTrackAppVersionName>
+    <autoTrackAppVersionCode>true</autoTrackAppVersionCode>
+    <autoTrackRequestUrlStoreSize>true</autoTrackRequestUrlStoreSize>
+    <autoTrackAppPreInstalled>true</autoTrackAppPreInstalled>
+    <autoTrackApiLevel>true</autoTrackApiLevel>
+    <autoTrackScreenOrientation>true</autoTrackScreenOrientation>
+    <autoTrackConnectionType>true</autoTrackConnectionType>
+    <autoTrackAdvertisementOptOut>true</autoTrackAdvertisementOptOut>
+    <autoTrackPlaystoreUsername>false</autoTrackPlaystoreUsername>
+    <autoTrackPlaystoreMail>false</autoTrackPlaystoreMail>
+    <enableRemoteConfiguration>true</enableRemoteConfiguration>
+    <trackingConfigurationUrl>https://d1r27qvpjiaqj3.cloudfront.net/1111111111111111/36704.xml</trackingConfigurationUrl>
+    <globalTrackingParameter>
+        <parameter id="INTERN_SEARCH" key="asdf"/>
+        <parameter id="CUSTOMER_ID" key="AT1"/>
+        <pageParameter>
+            <parameter id="4" key="AT1"/>
+            <parameter id="3">ATS1</parameter>
+        </pageParameter>
+        <sessionParameter>
+            <parameter id="5">ATS1</parameter>
+            <parameter id="6" key="AT1"/>
+        </sessionParameter>
+        <userCategories>
+            <parameter id="7" key="AT1"/>
+        </userCategories>
+    </globalTrackingParameter>
+    <screen>
+        <classname type="text">com.webtrekk.SDKTest.TagIntegrationActivity</classname>
+        <mappingname type="text">TestActivity</mappingname>
+        <autoTracked>false</autoTracked>
+        <screenTrackingParameter>
+            <parameter id="PRODUCT_COST" key="AT1"/>
+            <pageParameter>
+                <parameter id="8" key="AT1"/>
+                <parameter id="9">ATS1</parameter>
+            </pageParameter>
+            <pageCategories>
+                <parameter id="10" key="AT1"/>
+                <parameter id="11">ATS1</parameter>
+            </pageCategories>
+        </screenTrackingParameter>
+    </screen>
+</webtrekkConfiguration>

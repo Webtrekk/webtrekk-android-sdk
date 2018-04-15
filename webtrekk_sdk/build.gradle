@@ -1,0 +1,257 @@
+apply plugin: 'com.android.library'
+apply plugin: 'com.github.dcendents.android-maven'
+apply plugin: 'maven-publish'
+apply plugin: 'com.jfrog.bintray'
+apply plugin: 'findbugs'
+
+
+def siteUrl = 'www.webtrekk.com'      // Homepage URL of the library
+def gitUrl = 'git@github.com:Webtrekk/webtrekk-android-sdk.git'   // Github repository URL
+group = "com.webtrekk.webtrekksdk"                                        // Maven Group ID for the artifact
+
+def projectName = 'Webtrekk Android SDK Library'
+def licenceName = 'MIT License'
+def licenceURL = 'https://github.com/Webtrekk/open-source-guidelines/blob/master/LICENSE-MIT.md'
+def devName = 'Arsen Vartbaronov'
+def devEmail = 'arsen.vartbaronov@webtrekk.com'
+def devID = 'vartbaronov'
+def webtrekkArtifactId = 'WebtrekkSDK'
+def webtrekkGitHubRepo = 'Webtrekk/webtrekk-android-sdk'
+
+task findbugs(type: FindBugs) {
+    ignoreFailures = false
+    effort = "default"
+    reportLevel = "medium"
+    classes = files("${project.buildDir}/intermediates/classes")
+    source = fileTree('src/main/java/')
+    classpath = files()
+    reports {
+        xml.enabled = true
+        xml {
+            destination file("$project.buildDir/findbugs/findbugs-output.xml")
+        }
+    }
+}
+
+task versionDef(){
+    if (parent.hasProperty("versionExt"))
+    {
+        version = versionExt
+    } else
+        version = "1.1.1"
+}
+
+task sourcesJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    classifier = 'sources'
+}
+
+def releaseFile = file("$project.buildDir/outputs/aar/webtrekk_sdk-release.aar")
+
+publishing {
+    publications {
+        WebtrekkPublication(MavenPublication) {
+            //get pom from install tast
+            def installPom = install.repositories.mavenInstaller.pom;
+            def dependenciesNode, scmNode, nameNode,  urlNode, licenceNode, developersNode;
+
+            println("installPom:"+installPom)
+
+            //fill pom nodes from install xml
+            installPom.withXml{
+                nameNode = asNode().name
+                scmNode =  asNode().scm
+                licenceNode = asNode().licenses
+                developersNode = asNode().developers
+                dependenciesNode = asNode().dependencies
+                urlNode = asNode().url
+            }
+
+            //need to call withXml
+            installPom.writeTo(new StringWriter())
+
+            //change publication pom
+            pom.withXml {
+                asNode().append(nameNode)
+                asNode().append(urlNode)
+                asNode().append(licenceNode)
+                asNode().append(developersNode)
+                asNode().append(scmNode)
+                asNode().append(dependenciesNode)
+            }
+
+            artifactId webtrekkArtifactId
+
+            artifacts {
+                artifact sourcesJar
+                artifact(releaseFile) {
+                    classifier null
+                    extension "aar"
+                }
+            }
+        }
+    }
+}
+android {
+    compileSdkVersion COMPILE_SDK_VERSION as int
+    buildToolsVersion BUILD_TOOLS_VERSION as String
+
+    defaultConfig {
+        minSdkVersion MIN_SDK_VERSION as int
+        targetSdkVersion 22
+    }
+    buildTypes {
+        println("current version in gradle:"+version)
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            resValue "string", "version_name", version
+        }
+        debug {
+            resValue "string", "version_name", version
+        }
+    }
+
+    defaultPublishConfig 'release'
+    buildToolsVersion '26.0.2'
+}
+
+
+task checkstyle(type: Checkstyle) {
+    configFile file("${project.rootDir}/config/quality/checkstyle/checkstyle.xml") // Where my checkstyle config is...
+    configProperties.checkstyleSuppressionsPath = file("${project.rootDir}/config/quality/checkstyle/suppressions.xml").absolutePath // Where is my suppressions file for checkstyle is...
+    source 'src'
+    include '**/*.java'
+    exclude '**/gen/**'
+    classpath = files()
+}
+
+task javadoc(type: Javadoc) {
+    source = android.sourceSets.main.java.srcDirs
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+install {
+    repositories.mavenInstaller {
+
+        // This generates POM.xml with proper parameters
+        pom {
+            project {
+                packaging 'aar'
+                // Add your description here
+                name projectName
+                url siteUrl
+                artifactId webtrekkArtifactId
+
+                // Set your license
+                licenses {
+                    license {
+                        name licenceName
+                        url licenceURL
+                    }
+                }
+                developers {
+                    developer {
+                        id devID
+                        name devName
+                        email devEmail
+                    }
+                }
+                scm {
+                    connection gitUrl
+                    developerConnection gitUrl
+                    url siteUrl
+                }
+            }
+        }
+
+        pom.withXml{
+            //change dependency
+            asNode().dependencies.dependency.findAll { xmlDep ->
+                if ( xmlDep.groupId.text() == "com.google.android.gms"
+                        &&  xmlDep.artifactId.text() == "play-services-ads") {
+                    def xmlOptional = xmlDep.optional[ 0 ];
+                    if ( !xmlOptional ) {
+                        xmlOptional = xmlDep.appendNode( 'optional' )
+                    }
+                    xmlOptional.value = 'true';
+                }
+            }
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation ('com.android.support:support-core-utils:27.0.1')
+    implementation ('com.android.support:recyclerview-v7:27.0.1')
+    androidTestImplementation 'org.mockito:mockito-core:1.9.5'
+    androidTestImplementation 'com.google.dexmaker:dexmaker:1.2'
+    androidTestImplementation 'com.google.dexmaker:dexmaker-mockito:1.2'
+}
+
+
+artifacts {
+    //archives javadocJar
+    archives sourcesJar
+}
+
+bintray {
+
+    def Properties properties = new Properties()
+    def File localPropFile = project.rootProject.file('local.properties')
+    if (localPropFile.exists()) {
+        properties.load(localPropFile.newDataInputStream())
+    }else
+    {
+        if (parent.hasProperty("bintrayUserEx")) {
+            properties.setProperty("bintray.user", bintrayUserEx)
+        }
+        if (parent.hasProperty("bintrayApiKeyrEx")) {
+            properties.setProperty("bintray.apikey", bintrayApiKeyrEx)
+        }
+        if (parent.hasProperty("bintrayGpgPasswordEx")) {
+            properties.setProperty("bintray.gpg.password", bintrayGpgPasswordEx)
+        }
+    }
+
+    user = properties.getProperty("bintray.user")
+    if (user == null && parent.hasProperty("bintrayUserEx")) {
+        user = bintrayUserEx
+    }
+    key = properties.getProperty("bintray.apikey")
+    if (key == null && parent.hasProperty("bintrayApiKeyrEx")){
+        key = bintrayApiKeyrEx
+    }
+
+    publications = ['WebtrekkPublication']
+    pkg {
+        repo = "maven"
+        name = "webtrekk-sdk"
+        websiteUrl = siteUrl
+        vcsUrl = gitUrl
+        licenses = ["MIT"]
+        githubRepo = webtrekkGitHubRepo
+        githubReleaseNotesFile = 'README.md'
+        publish = true
+        publicDownloadNumbers = true
+        version {
+            desc = "Webtrekk Android SDK Library"
+            gpg {
+                sign = true //Determines whether to GPG sign the files. The default is false
+                passphrase = properties.getProperty("bintray.gpg.password")
+                if (passphrase == null && parent.hasProperty("bintrayGpgPasswordEx")){
+                    passphrase = bintrayGpgPasswordEx
+                }
+                //Optional. The passphrase for GPG signing'
+            }
+        }
+    }
+bintrayUpload.dependsOn install
+install.dependsOn "assembleRelease"
+}

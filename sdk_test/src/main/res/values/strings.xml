@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">Tracking Library Demo</string>
+
+    <string name="hello_world">Welcome to the Tracking Library Demo!</string>
+    <string name="action_settings">Settings</string>
+    <string name="title_activity_page_example_acitivity">PageExampleAcitivity</string>
+    <string name="title_activity_shop_example">ShopExampleActivity</string>
+    <string name="title_activity_media">MediaActivity</string>
+    <string name="title_activity_CDB">CDBActivity</string>
+    <string name="loading_video">loading video</string>
+    <string name="product_view">View</string>
+    <string name="product_add">Add</string>
+    <string name="product_conf">Conf</string>
+    <string name="product_clear_basket">Clear Basket</string>
+    <string name="permission_error">Permittion Error</string>
+    <string name="permission_granted">Permittion Granted</string>
+</resources>

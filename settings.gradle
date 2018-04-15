@@ -1,0 +1,4 @@
+include ':webtrekk_sdk'
+include ':sdk_test'
+
+rootProject.name = 'sdk_test-parent'
