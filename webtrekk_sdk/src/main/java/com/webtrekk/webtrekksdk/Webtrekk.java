@@ -43,7 +43,6 @@ import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -108,6 +107,18 @@ public class Webtrekk implements ActivityListener.Callback {
         initWebtrekk(app, R.raw.webtrekk_config);
     }
 
+
+    /**
+     * this initializes the webtrekk tracking configuration, it has to be called only once when the
+     * application starts, for example in the Application Class or the Main Activitys onCreate.
+     *
+     * @param app       application instance
+     * @param validPins SHA-256 pins
+     */
+    final public void initWebtrekk(final Application app, Set<String> validPins) {
+        initWebtrekk(app, R.raw.webtrekk_config, validPins);
+    }
+
     /**
      * this initializes the webtrekk tracking configuration, it has to be called only once when the
      * application starts, for example in the Application Class or the Main Activitys onCreate.
@@ -142,7 +153,7 @@ public class Webtrekk implements ActivityListener.Callback {
      * @param c                the application mContext / mContext of the main activity
      * @param configResourceID resource config ID.
      */
-    void initWebtrekk(final Context c, int configResourceID, Set<String> validPins) {
+    final public void initWebtrekk(final Context c, int configResourceID, Set<String> validPins) {
         if (c == null) {
             throw new IllegalArgumentException("no valid mContext");
         }
