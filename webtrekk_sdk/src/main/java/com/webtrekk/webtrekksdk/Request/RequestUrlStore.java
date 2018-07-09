@@ -166,7 +166,7 @@ public class RequestUrlStore {
     // flush to file all data, clear cache.
     public void flush()
     {
-        if (size() > 0 && mLatestSavedURLID < mIDs.lastKey()) {
+        if (!mIDs.isEmpty() && mLatestSavedURLID < mIDs.lastKey()) {
             WebtrekkLogging.log("Flush items to memory. Size:"+size() + " latest saved URL ID:"+ mLatestSavedURLID + " latest IDS:"+ mIDs.lastKey());
             saveURLsToFile(new SaveURLAction() {
                 @Override
@@ -252,7 +252,9 @@ public class RequestUrlStore {
      */
     public void addURL(String requestUrl) {
         mURLCache.put(mIndex, requestUrl);
-        mIDs.put(mIndex++, -1l);
+        synchronized (mIDs) {
+            mIDs.put(mIndex++, -1l);
+        }
     }
 
     public int size()
