@@ -44,7 +44,7 @@ public class PermissionRequest {
             }
         }
 
-        if (permissionsResult.size() > 0) {
+        if (!permissionsResult.isEmpty()) {
             ActivityCompat.requestPermissions(activity,
                     permissionsResult.toArray(new String[permissionsResult.size()]), PERMISSION_REQUEST);
         }
