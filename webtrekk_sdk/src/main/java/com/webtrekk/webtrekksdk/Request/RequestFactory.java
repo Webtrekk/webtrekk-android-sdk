@@ -253,7 +253,6 @@ public class RequestFactory {
      */
     private void initSampling() {
         SharedPreferences preferences = HelperFunctions.getWebTrekkSharedPreference(mContext);
-        ;
 
         if (preferences.contains(PREFERENCE_KEY_IS_SAMPLING)) {
             // key exists so set sampling value and return
