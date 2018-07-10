@@ -255,7 +255,7 @@ public class RequestFactory {
      * it can be reset with changing the xml config
      */
     private void initSampling() {
-        SharedPreferences preferences = HelperFunctions.getWebTrekkSharedPreference(mContext);;
+        SharedPreferences preferences = HelperFunctions.getWebTrekkSharedPreference(mContext);
 
         if(preferences.contains(PREFERENCE_KEY_IS_SAMPLING)) {
             // key exists so set sampling value and return
