@@ -38,7 +38,10 @@ public class PinConnectionValidator {
     public void validatePinning(@NonNull HttpsURLConnection conn) throws SSLException {
 
         // Don't validate if no valid pins are provided
-        if (validPins.isEmpty()) return;
+        if (validPins.isEmpty()) {
+            WebtrekkLogging.log("PinConnectionValidator: Warning - No public pins provided. Pinning will be ignored.");
+            return;
+        }
 
         StringBuilder certChainMsg = new StringBuilder();
         try {
