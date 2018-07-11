@@ -26,10 +26,10 @@ import javax.net.ssl.X509TrustManager;
 
 public class PinConnectionValidator {
 
-    @NonNull
+    @Nullable
     private final Set<String> validPins;
 
-    public PinConnectionValidator(@NonNull Set<String> validPins) {
+    public PinConnectionValidator(@Nullable Set<String> validPins) {
         this.validPins = validPins;
     }
 
@@ -38,7 +38,7 @@ public class PinConnectionValidator {
     public void validatePinning(@NonNull HttpsURLConnection conn) throws SSLException {
 
         // Don't validate if no valid pins are provided
-        if (validPins.isEmpty()) {
+        if (validPins == null || validPins.isEmpty()) {
             WebtrekkLogging.log("PinConnectionValidator: Warning - No public pins provided. Pinning will be ignored.");
             return;
         }
