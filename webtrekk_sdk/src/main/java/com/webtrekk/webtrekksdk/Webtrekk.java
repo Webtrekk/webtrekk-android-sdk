@@ -122,15 +122,25 @@ public class Webtrekk implements ActivityListener.Callback {
      * application starts, for example in the Application Class or the Main Activitys onCreate.
      * @param app application instance
      * @param configResourceID id of config resource
-     *
      */
     final public void initWebtrekk(final Application app, int configResourceID) {
+        initWebtrekk(app, configResourceID, null);
+    }
+
+    /**
+     * this initializes the webtrekk tracking configuration, it has to be called only once when the
+     * application starts, for example in the Application Class or the Main Activitys onCreate.
+     * @param app application instance
+     * @param configResourceID id of config resource
+     * @param validPins SHA-256 pins
+     */
+    final public void initWebtrekk(final Application app, int configResourceID, Set<String> validPins) {
         if (app == null) {
             throw new IllegalArgumentException("no valid app");
         }
         initVersions(app.getApplicationContext());
         initAutoTracking(app);
-        initWebtrekk(app.getApplicationContext(), configResourceID, null);
+        initWebtrekk(app.getApplicationContext(), configResourceID, validPins);
     }
 
     /**
@@ -152,7 +162,7 @@ public class Webtrekk implements ActivityListener.Callback {
      * @param c the application mContext / mContext of the main activity
      * @param configResourceID resource config ID.
      */
-    final public void initWebtrekk(final Context c, int configResourceID, Set<String> validPins) {
+    private void initWebtrekk(final Context c, int configResourceID, Set<String> validPins) {
         if (c == null) {
             throw new IllegalArgumentException("no valid mContext");
         }
