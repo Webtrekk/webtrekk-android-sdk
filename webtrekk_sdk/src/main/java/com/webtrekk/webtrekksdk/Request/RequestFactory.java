@@ -20,7 +20,6 @@ package com.webtrekk.webtrekksdk.Request;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.os.Handler;
 
 import com.webtrekk.webtrekksdk.Configuration.ActivityConfiguration;
 import com.webtrekk.webtrekksdk.Modules.AppinstallGoal;
