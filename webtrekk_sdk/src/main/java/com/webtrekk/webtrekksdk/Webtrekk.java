@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.webtrekk.webtrekksdk.Modules.ExceptionHandler;
 import com.webtrekk.webtrekksdk.Request.RequestFactory;
@@ -109,17 +110,37 @@ public class Webtrekk implements ActivityListener.Callback {
     /**
      * this initializes the webtrekk tracking configuration, it has to be called only once when the
      * application starts, for example in the Application Class or the Main Activitys onCreate.
+     * @param app       application instance
+     * @param validPins SHA-256 pins
+     */
+    final public void initWebtrekk(final Application app, Set<String> validPins) {
+        initWebtrekk(app, R.raw.webtrekk_config, validPins);
+    }
+
+    /**
+     * this initializes the webtrekk tracking configuration, it has to be called only once when the
+     * application starts, for example in the Application Class or the Main Activitys onCreate.
      * @param app application instance
      * @param configResourceID id of config resource
-     *
      */
     final public void initWebtrekk(final Application app, int configResourceID) {
+        initWebtrekk(app, configResourceID, null);
+    }
+
+    /**
+     * this initializes the webtrekk tracking configuration, it has to be called only once when the
+     * application starts, for example in the Application Class or the Main Activitys onCreate.
+     * @param app application instance
+     * @param configResourceID id of config resource
+     * @param validPins SHA-256 pins
+     */
+    final public void initWebtrekk(final Application app, int configResourceID, Set<String> validPins) {
         if (app == null) {
             throw new IllegalArgumentException("no valid app");
         }
         initVersions(app.getApplicationContext());
         initAutoTracking(app);
-        initWebtrekk(app.getApplicationContext(), configResourceID);
+        initWebtrekk(app.getApplicationContext(), configResourceID, validPins);
     }
 
     /**
@@ -132,7 +153,7 @@ public class Webtrekk implements ActivityListener.Callback {
      */
     void initWebtrekk(final Context c)
     {
-        initWebtrekk(c, R.raw.webtrekk_config);
+        initWebtrekk(c, R.raw.webtrekk_config, null);
     }
 
     /**
@@ -141,7 +162,7 @@ public class Webtrekk implements ActivityListener.Callback {
      * @param c the application mContext / mContext of the main activity
      * @param configResourceID resource config ID.
      */
-    void initWebtrekk(final Context c, int configResourceID) {
+    private void initWebtrekk(final Context c, int configResourceID, Set<String> validPins) {
         if (c == null) {
             throw new IllegalArgumentException("no valid mContext");
         }
@@ -156,7 +177,7 @@ public class Webtrekk implements ActivityListener.Callback {
         boolean isFirstStart = HelperFunctions.firstStart(mContext);
 
         initTrackingConfiguration(configResourceID);
-        mRequestFactory.init(mContext, trackingConfiguration, this);
+        mRequestFactory.init(mContext, trackingConfiguration, this, validPins);
         //TODO: make sure this can not break
         //Application act = (Application) mContext.getApplicationContext();
         mExceptionHandler.init(mRequestFactory, mContext);
@@ -193,25 +214,25 @@ public class Webtrekk implements ActivityListener.Callback {
      */
     final void initTrackingConfiguration(final String configurationString, int configResourceID) {
 
-            // always parse the local raw config version first, this is fallback, default and also the way to fix broken online configs
-            //TODO: this could me more elegant by only parsing it when its a new app version which needs to be set anyway
-            String trackingConfigurationString;
-            String defaultConfigurationString = null;
-            if (configurationString == null) {
-                try {
-                    trackingConfigurationString = HelperFunctions.stringFromStream(mContext.getResources().openRawResource(configResourceID));
-                } catch (IOException e) {
-                    WebtrekkLogging.log("no custom config was found, illegal state, provide a valid config in res id:"+configResourceID);
-                    throw new IllegalStateException("can not load xml configuration file, invalid state");
-                }
-                if(trackingConfigurationString.length() < 80) {
-                    // neccesary to make sure it uses the placeholder which has 66 chars length
-                    WebtrekkLogging.log("no custom config was found, illegal state, provide a valid config in res id:"+configResourceID);
-                    throw new IllegalStateException("can not load xml configuration file, invalid state");
-                }
-            } else {
-                trackingConfigurationString = configurationString;
+        // always parse the local raw config version first, this is fallback, default and also the way to fix broken online configs
+        //TODO: this could me more elegant by only parsing it when its a new app version which needs to be set anyway
+        String trackingConfigurationString;
+        String defaultConfigurationString = null;
+        if (configurationString == null) {
+            try {
+                trackingConfigurationString = HelperFunctions.stringFromStream(mContext.getResources().openRawResource(configResourceID));
+            } catch (IOException e) {
+                WebtrekkLogging.log("no custom config was found, illegal state, provide a valid config in res id:"+configResourceID);
+                throw new IllegalStateException("can not load xml configuration file, invalid state");
             }
+            if(trackingConfigurationString.length() < 80) {
+                // neccesary to make sure it uses the placeholder which has 66 chars length
+                WebtrekkLogging.log("no custom config was found, illegal state, provide a valid config in res id:"+configResourceID);
+                throw new IllegalStateException("can not load xml configuration file, invalid state");
+            }
+        } else {
+            trackingConfigurationString = configurationString;
+        }
 
         try {
             // parse default configuration without default, will throw exceptions when its not valid
@@ -482,7 +503,7 @@ public class Webtrekk implements ActivityListener.Callback {
         if (status == ActivityTrackingStatus.STATUS.RETURNINIG_FROM_BACKGROUND){
             if (inactivityTime > trackingConfiguration.getResendOnStartEventTime())
                 mRequestFactory.forceNewSession();
-             mRequestFactory.restore();
+            mRequestFactory.restore();
         }
 
         autoTrackActivity();
@@ -776,7 +797,7 @@ public class Webtrekk implements ActivityListener.Callback {
             return;
         }
 
-        final String everId = HelperFunctions.getEverId(mContext);;
+        final String everId = HelperFunctions.getEverId(mContext);
 
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
             webView.addJavascriptInterface(new AndroidWebViewCallback(mContext), "WebtrekkAndroidWebViewCallback");

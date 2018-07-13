@@ -31,17 +31,19 @@ import com.webtrekk.webtrekksdk.Request.TrackingRequest;
 import com.webtrekk.webtrekksdk.Request.RequestProcessor;
 import com.webtrekk.webtrekksdk.TrackingParameter;
 import com.webtrekk.webtrekksdk.Utils.HelperFunctions;
+import com.webtrekk.webtrekksdk.Utils.PinConnectionValidator;
 import com.webtrekk.webtrekksdk.Utils.WebtrekkLogging;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.net.ssl.HttpsURLConnection;
 
 /**
  * Class is responsible for calling thread that is get Advertizing ID and processing referrer id. It is extracts click id and sends install request.
@@ -55,6 +57,7 @@ public class Campaign extends Thread
     private final boolean mIsAutoTrackAdvID;
     private final Context mContext;
     private final boolean mEnableCampaign;
+    private final PinConnectionValidator mValidator;
 
     private String mMediaCode;
 
@@ -69,7 +72,7 @@ public class Campaign extends Thread
     private static final long CAMPAIGN_ANALYZE_PERIOD = 20000;
 
 
-    Campaign(Context context, String trackID, boolean isFirstStart, boolean isAutoTrackAdvID, boolean enableCampaign) {
+    private Campaign(Context context, String trackID, boolean isFirstStart, boolean isAutoTrackAdvID, boolean enableCampaign, PinConnectionValidator validator) {
 
         mContext = context;
         //if it is not first start check if thread was interrupted on first start.
@@ -78,6 +81,7 @@ public class Campaign extends Thread
         mTrackID = trackID;
         mIsAutoTrackAdvID = isAutoTrackAdvID;
         mEnableCampaign = enableCampaign;
+        mValidator = validator;
     }
 
     /**
@@ -88,7 +92,7 @@ public class Campaign extends Thread
      * @param isFirstStart if this is first start
      * @return instance of Campain class. you need it to interrupt process if application is closed.
      */
-    public static Campaign start(Context context, String trackID, boolean isFirstStart, boolean isAutoTrackAdvID, boolean enableCampaign)
+    public static Campaign start(Context context, String trackID, boolean isFirstStart, boolean isAutoTrackAdvID, boolean enableCampaign, PinConnectionValidator validator)
     {
         if (trackID == null || trackID.isEmpty())
         {
@@ -96,7 +100,7 @@ public class Campaign extends Thread
             return null;
         }
 
-        Campaign service = new Campaign(context, trackID, isFirstStart, isAutoTrackAdvID, enableCampaign);
+        Campaign service = new Campaign(context, trackID, isFirstStart, isAutoTrackAdvID, enableCampaign, validator);
         service.start();
         return service;
     }
@@ -296,7 +300,7 @@ public class Campaign extends Thread
      */
     private String requestMediaCode(String advID, String clickID, String userAgent)
     {
-        RequestProcessor requestProcessor = new RequestProcessor(null);
+        RequestProcessor requestProcessor = new RequestProcessor(null, mValidator);
 
         final TrackingParameter tp = new TrackingParameter();
 
@@ -322,7 +326,7 @@ public class Campaign extends Thread
 
                 requestProcessor.sendRequest(new URL(installURL), new RequestProcessor.ProcessOutputCallback() {
                     @Override
-                    public void process(int statusCode, HttpURLConnection connection) {
+                    public void process(int statusCode, HttpsURLConnection connection) {
                         JsonReader jsonReader = null;
                         String mediaCodeRaw = null;
                         try {
@@ -484,7 +488,7 @@ public class Campaign extends Thread
         SharedPreferences preferences = HelperFunctions.getWebTrekkSharedPreference(context);
         value = preferences.getString(key, null);
         if (value != null && remove)
-          preferences.edit().remove(key).apply();
+            preferences.edit().remove(key).apply();
         return value;
     }
 
@@ -515,12 +519,12 @@ public class Campaign extends Thread
         }
 
         String getId(Object info) throws Throwable{
-                return callMethod(null, info, "getId", null);
+            return callMethod(null, info, "getId", null);
         }
 
         boolean isLimitAdTrackingEnabled(Object info) throws Throwable{
-                Boolean result = callMethod(null, info, "isLimitAdTrackingEnabled", null);
-                return result == null ? false : result;
+            Boolean result = callMethod(null, info, "isLimitAdTrackingEnabled", null);
+            return result == null ? false : result;
         }
 
         private <T extends Object> T callMethod(String className, Object classInstance, String methodName, Class[] argumentsTypes, Object... argumentsValues) throws Throwable {

@@ -20,7 +20,6 @@ package com.webtrekk.webtrekksdk.Request;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.os.Handler;
 
 import com.webtrekk.webtrekksdk.Configuration.ActivityConfiguration;
 import com.webtrekk.webtrekksdk.Modules.AppinstallGoal;
@@ -29,12 +28,14 @@ import com.webtrekk.webtrekksdk.Configuration.TrackingConfiguration;
 import com.webtrekk.webtrekksdk.TrackingParameter;
 import com.webtrekk.webtrekksdk.TrackingParameter.Parameter;
 import com.webtrekk.webtrekksdk.Utils.HelperFunctions;
+import com.webtrekk.webtrekksdk.Utils.PinConnectionValidator;
 import com.webtrekk.webtrekksdk.Utils.WebtrekkLogging;
 import com.webtrekk.webtrekksdk.Webtrekk;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -60,6 +61,7 @@ public class RequestFactory {
     private volatile Campaign mCampaign;
     private final AppinstallGoal mAppinstallGoal = new AppinstallGoal();
     TrackingRequestTemporaryStore mPendingRequestStore;
+    private PinConnectionValidator mValidator;
     private static final long PENDING_INTERVAL = 30000;
 
     //additional customer params, this is a globally available HashMap
@@ -103,7 +105,7 @@ public class RequestFactory {
     private ScheduledFuture<?> mFlashTimerFuture;
 
 
-    public void init(Context context, TrackingConfiguration trackingConfiguration, Webtrekk wt)
+    public void init(Context context, TrackingConfiguration trackingConfiguration, Webtrekk wt, Set<String> validPins)
     {
         mContext = context;
         mTrackingConfiguration = trackingConfiguration;
@@ -128,7 +130,7 @@ public class RequestFactory {
         mConstGlobalTrackingParameter = new TrackingParameter();
         mGlobalTrackingParameter = new TrackingParameter();
         mPendingRequestStore = new TrackingRequestTemporaryStore(mContext, mTrackingConfiguration);
-
+        mValidator = new PinConnectionValidator(validPins);
     }
 
     public boolean isOptout() {
@@ -252,7 +254,7 @@ public class RequestFactory {
      * it can be reset with changing the xml config
      */
     private void initSampling() {
-        SharedPreferences preferences = HelperFunctions.getWebTrekkSharedPreference(mContext);;
+        SharedPreferences preferences = HelperFunctions.getWebTrekkSharedPreference(mContext);
 
         if(preferences.contains(PREFERENCE_KEY_IS_SAMPLING)) {
             // key exists so set sampling value and return
@@ -638,7 +640,7 @@ public class RequestFactory {
     {
         if (!mIsOptout) {
             mCampaign = Campaign.start(mContext, mTrackingConfiguration.getTrackId(), isFirstStart,
-                    mTrackingConfiguration.isAutoTrackAdvertiserId(), mTrackingConfiguration.isEnableCampaignTracking());
+                    mTrackingConfiguration.isAutoTrackAdvertiserId(), mTrackingConfiguration.isEnableCampaignTracking(), mValidator);
         }
     }
 
@@ -683,7 +685,7 @@ public class RequestFactory {
      */
     public boolean onSendIntervalOver() {
         //WebtrekkLogging.log("onSendIntervalOver: request urls: " + mRequestUrlStore.size()
-                //+ " thread done:"+(mRequestProcessorFuture == null ? "null": mRequestProcessorFuture.isDone()));
+        //+ " thread done:"+(mRequestProcessorFuture == null ? "null": mRequestProcessorFuture.isDone()));
         if(mRequestUrlStore.size() > 0  && (mRequestProcessorFuture == null || mRequestProcessorFuture.isDone())) {
             if (mExecutorService == null) {
                 // use daemon thread.
@@ -697,7 +699,7 @@ public class RequestFactory {
                     }
                 });
             }
-            mRequestProcessorFuture = mExecutorService.submit(new RequestProcessor(mRequestUrlStore));
+            mRequestProcessorFuture = mExecutorService.submit(new RequestProcessor(mRequestUrlStore, mValidator));
             return true;
         }else
             return false;
