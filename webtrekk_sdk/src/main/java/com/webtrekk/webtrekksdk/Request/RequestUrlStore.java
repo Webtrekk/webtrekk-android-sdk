@@ -254,7 +254,9 @@ public class RequestUrlStore {
      */
     public void addURL(String requestUrl) {
         mURLCache.put(mIndex, requestUrl);
-        mIDs.put(mIndex++, -1l);
+        synchronized (mIDs) {
+            mIDs.put(mIndex++, -1l);
+        }
     }
 
     public int size()
