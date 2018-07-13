@@ -166,22 +166,24 @@ public class RequestUrlStore {
     // flush to file all data, clear cache.
     public void flush()
     {
-        if (!mIDs.isEmpty() && mLatestSavedURLID < mIDs.lastKey()) {
-            WebtrekkLogging.log("Flush items to memory. Size:"+size() + " latest saved URL ID:"+ mLatestSavedURLID + " latest IDS:"+ mIDs.lastKey());
-            saveURLsToFile(new SaveURLAction() {
-                @Override
-                public void onSave(PrintWriter writer) {
-                    for (Integer id : mIDs.keySet()) {
-                        if (id <= mLatestSavedURLID)
-                            continue;
-                        String url = mURLCache.get(id);
-                        if (url != null) {
-                            writer.println(url);
-                            mLatestSavedURLID = id;
+        synchronized (mIDs) {
+            if (!mIDs.isEmpty() && mLatestSavedURLID < mIDs.lastKey()) {
+                WebtrekkLogging.log("Flush items to memory. Size:" + size() + " latest saved URL ID:" + mLatestSavedURLID + " latest IDS:" + mIDs.lastKey());
+                saveURLsToFile(new SaveURLAction() {
+                    @Override
+                    public void onSave(PrintWriter writer) {
+                        for (Integer id : mIDs.keySet()) {
+                            if (id <= mLatestSavedURLID)
+                                continue;
+                            String url = mURLCache.get(id);
+                            if (url != null) {
+                                writer.println(url);
+                                mLatestSavedURLID = id;
+                            }
                         }
                     }
-                }
-            });
+                });
+            }
         }
         writeFileAttributes();
         // for debug only uncomment
@@ -252,9 +254,7 @@ public class RequestUrlStore {
      */
     public void addURL(String requestUrl) {
         mURLCache.put(mIndex, requestUrl);
-        synchronized (mIDs) {
-            mIDs.put(mIndex++, -1l);
-        }
+        mIDs.put(mIndex++, -1l);
     }
 
     public int size()
