@@ -48,7 +48,7 @@ public class WebViewIntegrationTest extends WebtrekkBaseMainTest {
                 @Override
                 public void load(String url) {
                     //check if everID equal
-                    if (url.startsWith("http://q3.webtrekk.net/")) {
+                    if (url.startsWith("https://q3.webtrekk.net/")) {
 
                         URLParsel parcel = new URLParsel();
 

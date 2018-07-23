@@ -38,7 +38,7 @@ public class TrackingConfigurationXmlParserTest extends AndroidTestCase {
     String invalidXmlConfiguration = "foo";
     String missingTagXmlConfiguration = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
             "<configuration>\n" +
-            "<trackdomain type=\"text\">http://q3.webtrekk.net</trackdomain>\n" +
+            "<trackdomain type=\"text\">https://q3.webtrekk.net</trackdomain>\n" +
             "<trackid type=\"text\">111111111111\n" +
             "\n" +
             "\n" +

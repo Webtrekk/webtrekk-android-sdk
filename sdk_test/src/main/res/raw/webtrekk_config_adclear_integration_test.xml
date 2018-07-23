@@ -11,7 +11,7 @@
     <!--trackDomain type="text">http://tracker-int-01.webtrekk.net</trackDomain-->
 
     <!--the webtrekk trackDomain where the requests are send -->
-    <!--<trackDomain type="text">http://q3.webtrekk.net</trackDomain>-->
+    <!--<trackDomain type="text">https://q3.webtrekk.net</trackDomain>-->
     <trackDomain type="text">https://wt01.webtrekk.net</trackDomain>
 
     <!--customers trackid-->
