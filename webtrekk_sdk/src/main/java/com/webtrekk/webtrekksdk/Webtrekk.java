@@ -26,6 +26,19 @@ import android.support.annotation.Nullable;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 
+import com.webtrekk.webtrekksdk.Configuration.ActivityConfiguration;
+import com.webtrekk.webtrekksdk.Configuration.TrackingConfiguration;
+import com.webtrekk.webtrekksdk.Configuration.TrackingConfigurationDownloadTask;
+import com.webtrekk.webtrekksdk.Configuration.TrackingConfigurationXmlParser;
+import com.webtrekk.webtrekksdk.Modules.ExceptionHandler;
+import com.webtrekk.webtrekksdk.Request.RequestFactory;
+import com.webtrekk.webtrekksdk.Request.TrackingRequest;
+import com.webtrekk.webtrekksdk.TrackingParameter.Parameter;
+import com.webtrekk.webtrekksdk.Utils.ActivityListener;
+import com.webtrekk.webtrekksdk.Utils.ActivityTrackingStatus;
+import com.webtrekk.webtrekksdk.Utils.HelperFunctions;
+import com.webtrekk.webtrekksdk.Utils.WebtrekkLogging;
+
 import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.IOException;
@@ -33,19 +46,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import com.webtrekk.webtrekksdk.Modules.ExceptionHandler;
-import com.webtrekk.webtrekksdk.Request.RequestFactory;
-import com.webtrekk.webtrekksdk.Request.TrackingRequest;
-import com.webtrekk.webtrekksdk.TrackingParameter.Parameter;
-import com.webtrekk.webtrekksdk.Configuration.ActivityConfiguration;
-import com.webtrekk.webtrekksdk.Utils.ActivityListener;
-import com.webtrekk.webtrekksdk.Utils.ActivityTrackingStatus;
-import com.webtrekk.webtrekksdk.Utils.HelperFunctions;
-import com.webtrekk.webtrekksdk.Configuration.TrackingConfiguration;
-import com.webtrekk.webtrekksdk.Configuration.TrackingConfigurationDownloadTask;
-import com.webtrekk.webtrekksdk.Configuration.TrackingConfigurationXmlParser;
-import com.webtrekk.webtrekksdk.Utils.WebtrekkLogging;
 
 /**
  * The WebtrekkSDK main class, the developer/customer interacts with the SDK through this class.
@@ -374,7 +374,7 @@ public class Webtrekk implements ActivityListener.Callback {
     /**
      * this method gets called when auto tracking is enabled and one of the lifycycle methods is called
      */
-    void autoTrackActivity() {
+    public void autoTrackActivity() {
         // only track if auto tracking is enabled for that activity
         // the default value and the activities autoTracked value is based on the global xml settings
         boolean autoTrack = trackingConfiguration.isAutoTracked();
