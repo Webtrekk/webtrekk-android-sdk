@@ -140,7 +140,7 @@ public class RequestUrlStore {
     {
         // reset only if class was removed
         if (mIDs.size() == 0)
-          initFileAttributes();
+            initFileAttributes();
     }
 
     //Save URL to file
@@ -166,12 +166,12 @@ public class RequestUrlStore {
     // flush to file all data, clear cache.
     public void flush()
     {
-        synchronized (mIDs) {
-            if (!mIDs.isEmpty() && mLatestSavedURLID < mIDs.lastKey()) {
-                WebtrekkLogging.log("Flush items to memory. Size:" + size() + " latest saved URL ID:" + mLatestSavedURLID + " latest IDS:" + mIDs.lastKey());
-                saveURLsToFile(new SaveURLAction() {
-                    @Override
-                    public void onSave(PrintWriter writer) {
+        if (hasSpareIds()) {
+            WebtrekkLogging.log("Flush items to memory. Size:" + size() + " latest saved URL ID:" + mLatestSavedURLID + " latest IDS:" + mIDs.lastKey());
+            saveURLsToFile(new SaveURLAction() {
+                @Override
+                public void onSave(PrintWriter writer) {
+                    synchronized (mIDs) {
                         for (Integer id : mIDs.keySet()) {
                             if (id <= mLatestSavedURLID)
                                 continue;
@@ -182,8 +182,8 @@ public class RequestUrlStore {
                             }
                         }
                     }
-                });
-            }
+                }
+            });
         }
         writeFileAttributes();
         // for debug only uncomment
@@ -192,7 +192,7 @@ public class RequestUrlStore {
 
     public void clearAllTrackingData()
     {
-        clearLruCash();
+        clearUrlCache();
         mIDs.clear();
         mLoaddedIDs.clear();
         mIndex = 0;
@@ -202,11 +202,12 @@ public class RequestUrlStore {
     }
 
     // Should be called befor clear ids
-    private void clearLruCash()
+    private void clearUrlCache()
     {
-        for (Integer id: mIDs.keySet())
-        {
-            mURLCache.remove(id);
+        synchronized (mIDs) {
+            for (Integer id : mIDs.keySet()) {
+                mURLCache.remove(id);
+            }
         }
     }
 
@@ -223,7 +224,7 @@ public class RequestUrlStore {
                     WebtrekkLogging.log("Something wrong with logic. mLoaddedIDs should be zero if url isn't found");
                 if (isURLFileExists()) {
                     if (loadRequestsFromFile(mReadGroupSize, mIDs.get(id), id))
-                       url = mLoaddedIDs.get(id);
+                        url = mLoaddedIDs.get(id);
                     else // file is corrupted or missed
                     {
                         deleteAllCashedIDs();
@@ -254,14 +255,12 @@ public class RequestUrlStore {
      */
     public void addURL(String requestUrl) {
         mURLCache.put(mIndex, requestUrl);
-        synchronized (mIDs) {
-            mIDs.put(mIndex++, -1l);
-        }
+        mIDs.put(mIndex++, -1l);
     }
 
     public int size()
     {
-       return mIDs.size();
+        return mIDs.size();
     }
 
     public void removeLastURL() {
@@ -273,6 +272,12 @@ public class RequestUrlStore {
         if (mLoaddedIDs.remove(key) == null)
             mURLCache.remove(key);
         mIDs.remove(key);
+    }
+
+    private boolean hasSpareIds() {
+        synchronized (mIDs) {
+            return !mIDs.isEmpty() && mLatestSavedURLID < mIDs.lastKey();
+        }
     }
 
     private void dumpFile()
@@ -321,7 +326,7 @@ public class RequestUrlStore {
                     //put URL and increment id
                     mLoaddedIDs.put(id++, line);
                     offset += (line.length() + System.getProperty("line.separator").length());
-                   //set offset of next id if exists
+                    //set offset of next id if exists
                     if (mIDs.get(id) != null && (mLatestSavedURLID >= id || mLatestSavedURLID == -1) )
                         mIDs.put(id, offset);
                 }
