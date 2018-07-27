@@ -192,7 +192,7 @@ public class RequestUrlStore {
 
     public void clearAllTrackingData()
     {
-        clearLruCash();
+        clearUrlCache();
         mIDs.clear();
         mLoaddedIDs.clear();
         mIndex = 0;
@@ -202,7 +202,7 @@ public class RequestUrlStore {
     }
 
     // Should be called befor clear ids
-    private void clearLruCash()
+    private void clearUrlCache()
     {
         synchronized (mIDs) {
             for (Integer id : mIDs.keySet()) {
