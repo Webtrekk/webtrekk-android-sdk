@@ -146,31 +146,35 @@ public class RequestProcessor implements Runnable {
                 break;
 
             final String urlString = mRequestUrlStore.peek();
-            final URL url = getUrl(urlString);
-            if (url == null) {
-                WebtrekkLogging.log("Removing invalid URL '" + urlString + "' from queue. remaining: " + mRequestUrlStore.size());
+            if (urlString == null) {
                 mRequestUrlStore.removeLastURL();
-                continue;
-            }
-
-
-            try {
-                final int statusCode;
-                statusCode = sendRequest(url, null);
-                WebtrekkLogging.log("received status " + statusCode);
-                if (statusCode >= 200 && statusCode < 400) {
-                    //successful send, remove url from store
+            } else {
+                final URL url = getUrl(urlString);
+                if (url == null) {
+                    WebtrekkLogging.log("Removing invalid URL '" + urlString + "' from queue. remaining: " + mRequestUrlStore.size());
                     mRequestUrlStore.removeLastURL();
-                } else if (statusCode >= 500 && statusCode < 600) {
-                    //try to send later
-                    break;
-                } else { //400-499 case
-                    WebtrekkLogging.log("removing URL from queue as status code is between 400 and 499 or unexpected.");
-                    mRequestUrlStore.removeLastURL();
+                    continue;
                 }
-            } catch (InterruptedException e) {
-                // thread is interrupted exit from run loop
-                break;
+
+
+                try {
+                    final int statusCode;
+                    statusCode = sendRequest(url, null);
+                    WebtrekkLogging.log("received status " + statusCode);
+                    if (statusCode >= 200 && statusCode < 400) {
+                        //successful send, remove url from store
+                        mRequestUrlStore.removeLastURL();
+                    } else if (statusCode >= 500 && statusCode < 600) {
+                        //try to send later
+                        break;
+                    } else { //400-499 case
+                        WebtrekkLogging.log("removing URL from queue as status code is between 400 and 499 or unexpected.");
+                        mRequestUrlStore.removeLastURL();
+                    }
+                } catch (InterruptedException e) {
+                    // thread is interrupted exit from run loop
+                    break;
+                }
             }
         }
 

@@ -139,8 +139,10 @@ public class RequestUrlStore {
     public void reset()
     {
         // reset only if class was removed
-        if (mIDs.size() == 0)
-            initFileAttributes();
+        synchronized (mIDs) {
+            if (mIDs.isEmpty())
+                initFileAttributes();
+        }
     }
 
     //Save URL to file
@@ -167,7 +169,6 @@ public class RequestUrlStore {
     public void flush()
     {
         if (hasSpareIds()) {
-            WebtrekkLogging.log("Flush items to memory. Size:" + size() + " latest saved URL ID:" + mLatestSavedURLID + " latest IDS:" + mIDs.lastKey());
             saveURLsToFile(new SaveURLAction() {
                 @Override
                 public void onSave(PrintWriter writer) {
@@ -192,8 +193,7 @@ public class RequestUrlStore {
 
     public void clearAllTrackingData()
     {
-        clearUrlCache();
-        mIDs.clear();
+        clearIds();
         mLoaddedIDs.clear();
         mIndex = 0;
         mLatestSavedURLID = -1;
@@ -201,20 +201,24 @@ public class RequestUrlStore {
         writeFileAttributes();
     }
 
-    // Should be called befor clear ids
-    private void clearUrlCache()
+    private void clearIds()
     {
         synchronized (mIDs) {
             for (Integer id : mIDs.keySet()) {
                 mURLCache.remove(id);
             }
+
+            mIDs.clear();
         }
     }
 
 
     public String peek()
     {
-        int id = mIDs.firstKey();
+        int id = getFirstId();
+        if (id == Integer.MIN_VALUE)
+            return null;
+
         String url = mURLCache.get(id);
         if (url == null) {
             url = mLoaddedIDs.get(id);
@@ -228,7 +232,7 @@ public class RequestUrlStore {
                     else // file is corrupted or missed
                     {
                         deleteAllCashedIDs();
-                        return mURLCache.get(mIDs.firstKey());
+                        return mURLCache.get(id);
                     }
 
                 } else
@@ -260,11 +264,27 @@ public class RequestUrlStore {
 
     public int size()
     {
-        return mIDs.size();
+        synchronized (mIDs) {
+            return mIDs.size();
+        }
     }
 
     public void removeLastURL() {
-        removeKey(mIDs.firstKey());
+        synchronized (mIDs) {
+            if (!mIDs.isEmpty()) {
+                removeKey(mIDs.firstKey());
+            }
+        }
+    }
+
+    private int getFirstId() {
+        synchronized (mIDs) {
+            if (!mIDs.isEmpty()) {
+                return mIDs.firstKey();
+            }
+        }
+
+        return Integer.MIN_VALUE;
     }
 
     private void removeKey(int key)
@@ -276,7 +296,11 @@ public class RequestUrlStore {
 
     private boolean hasSpareIds() {
         synchronized (mIDs) {
-            return !mIDs.isEmpty() && mLatestSavedURLID < mIDs.lastKey();
+            if (mIDs.isEmpty())
+                return  false;
+
+            WebtrekkLogging.log("Flush items to memory. Size:" + mIDs.size() + " latest saved URL ID:" + mLatestSavedURLID + " latest IDS:" + mIDs.lastKey());
+            return mLatestSavedURLID < mIDs.lastKey();
         }
     }
 
@@ -346,13 +370,14 @@ public class RequestUrlStore {
     {
         while(true)
         {
-            int id = mIDs.firstKey();
+            int id = getFirstId();
+            if (id == -1) return;
             String url = mURLCache.get(id);
             if (url == null) {
                 url = mLoaddedIDs.get(id);
                 if (url == null)
                     removeKey(id);
-            }else
+            } else
                 break;
         }
     }
