@@ -59,7 +59,7 @@ public class RequestUrlStore {
     final private Map<Integer, String> mLoaddedIDs = new HashMap<>(mReadGroupSize);
 
     //Next string index
-    private int mIndex;
+    private volatile int mIndex;
     // current readed index in file
     private volatile long mLatestSavedURLID = -1;
     private static String URL_STORE_CURRENT_SIZE = "URL_STORE_CURRENT_SIZE";
@@ -125,10 +125,12 @@ public class RequestUrlStore {
 
     private void writeFileAttributes()
     {
-        WebtrekkLogging.log("save store size:"+mIDs.size());
-        SharedPreferences.Editor prefEdit = HelperFunctions.getWebTrekkSharedPreference(mContext).edit();
-        prefEdit.putLong(URL_STORE_SENDED_URL_OFSSET, mIDs.size() == 0 ? -1:mIDs.get(mIDs.firstKey()));
-        prefEdit.putInt(URL_STORE_CURRENT_SIZE, mIDs.size()).apply();
+        synchronized (mIDs) {
+            WebtrekkLogging.log("save store size:" + mIDs.size());
+            SharedPreferences.Editor prefEdit = HelperFunctions.getWebTrekkSharedPreference(mContext).edit();
+            prefEdit.putLong(URL_STORE_SENDED_URL_OFSSET, mIDs.isEmpty() ? -1 : mIDs.get(mIDs.firstKey()));
+            prefEdit.putInt(URL_STORE_CURRENT_SIZE, mIDs.size()).apply();
+        }
     }
 
     private interface SaveURLAction
@@ -140,8 +142,9 @@ public class RequestUrlStore {
     {
         // reset only if class was removed
         synchronized (mIDs) {
-            if (mIDs.isEmpty())
+            if (mIDs.isEmpty()) {
                 initFileAttributes();
+            }
         }
     }
 
@@ -176,6 +179,7 @@ public class RequestUrlStore {
                         for (Integer id : mIDs.keySet()) {
                             if (id <= mLatestSavedURLID)
                                 continue;
+
                             String url = mURLCache.get(id);
                             if (url != null) {
                                 writer.println(url);
@@ -215,8 +219,8 @@ public class RequestUrlStore {
 
     public String peek()
     {
-        int id = getFirstId();
-        if (id == Integer.MIN_VALUE)
+        Integer id = getFirstId();
+        if (id == null)
             return null;
 
         String url = mURLCache.get(id);
@@ -226,15 +230,16 @@ public class RequestUrlStore {
                 //not url in cash, get it from file
                 if (mLoaddedIDs.size() > 0)
                     WebtrekkLogging.log("Something wrong with logic. mLoaddedIDs should be zero if url isn't found");
-                if (isURLFileExists()) {
-                    if (loadRequestsFromFile(mReadGroupSize, mIDs.get(id), id))
+
+                Long mId = getValueById(id);
+                if (isURLFileExists() && mId != null) {
+                    if (loadRequestsFromFile(mReadGroupSize, mId, id))
                         url = mLoaddedIDs.get(id);
                     else // file is corrupted or missed
                     {
                         deleteAllCashedIDs();
                         return mURLCache.get(id);
                     }
-
                 } else
                     WebtrekkLogging.log("NO url in cache, but file doesn't exists as well. Some issue here");
             }
@@ -277,27 +282,42 @@ public class RequestUrlStore {
         }
     }
 
-    private int getFirstId() {
+    private Integer getFirstId() {
         synchronized (mIDs) {
             if (!mIDs.isEmpty()) {
                 return mIDs.firstKey();
             }
         }
 
-        return Integer.MIN_VALUE;
+        return null;
+    }
+
+    private Long getValueById(int id) {
+        synchronized (mIDs) {
+            if (mIDs.containsKey(id)) {
+                return mIDs.get(id);
+            }
+        }
+
+        return null;
     }
 
     private void removeKey(int key)
     {
-        if (mLoaddedIDs.remove(key) == null)
-            mURLCache.remove(key);
-        mIDs.remove(key);
+        synchronized (mIDs) {
+            if (mIDs.containsKey(key)) {
+                if (mLoaddedIDs.remove(key) == null)
+                    mURLCache.remove(key);
+                mIDs.remove(key);
+            }
+        }
     }
 
     private boolean hasSpareIds() {
         synchronized (mIDs) {
-            if (mIDs.isEmpty())
-                return  false;
+            if (mIDs.isEmpty()) {
+                return false;
+            }
 
             WebtrekkLogging.log("Flush items to memory. Size:" + mIDs.size() + " latest saved URL ID:" + mLatestSavedURLID + " latest IDS:" + mIDs.lastKey());
             return mLatestSavedURLID < mIDs.lastKey();
@@ -331,7 +351,7 @@ public class RequestUrlStore {
     /**
      * loads the requests from the cache file if present
      */
-    private boolean loadRequestsFromFile(int numbersToLoad, long startOffset, int firstID) {
+    private boolean loadRequestsFromFile(int numbersToLoad, Long startOffset, int firstID) {
 
         int id = firstID;
         long offset = startOffset < 0 ? 0 : startOffset;
@@ -345,13 +365,13 @@ public class RequestUrlStore {
                 //set offset for first id
                 mIDs.put(id, offset);
                 while ((line = reader.readLine()) != null && ind++ < numbersToLoad && mURLCache.get(id) == null) {
-                    if (mIDs.get(id) == null)
+                    if (getValueById(id) == null)
                         WebtrekkLogging.log("File is more then existed keys. Error. Key:" + id + " offset:" + offset);
                     //put URL and increment id
                     mLoaddedIDs.put(id++, line);
                     offset += (line.length() + System.getProperty("line.separator").length());
                     //set offset of next id if exists
-                    if (mIDs.get(id) != null && (mLatestSavedURLID >= id || mLatestSavedURLID == -1) )
+                    if (getValueById(id)!= null && (mLatestSavedURLID >= id || mLatestSavedURLID == -1) )
                         mIDs.put(id, offset);
                 }
             } finally {
@@ -370,8 +390,8 @@ public class RequestUrlStore {
     {
         while(true)
         {
-            int id = getFirstId();
-            if (id == -1) return;
+            Integer id = getFirstId();
+            if (id == null) return;
             String url = mURLCache.get(id);
             if (url == null) {
                 url = mLoaddedIDs.get(id);
