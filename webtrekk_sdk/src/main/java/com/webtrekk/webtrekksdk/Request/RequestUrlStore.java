@@ -42,6 +42,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * this class acts as a local storage for the url strings before the are send
@@ -59,7 +60,7 @@ public class RequestUrlStore {
     final private Map<Integer, String> mLoaddedIDs = new HashMap<>(mReadGroupSize);
 
     //Next string index
-    private volatile int mIndex;
+    private AtomicInteger mIndex = new AtomicInteger();
     // current readed index in file
     private volatile long mLatestSavedURLID = -1;
     private static String URL_STORE_CURRENT_SIZE = "URL_STORE_CURRENT_SIZE";
@@ -111,14 +112,14 @@ public class RequestUrlStore {
 
     private void initFileAttributes() {
         SharedPreferences pref = HelperFunctions.getWebTrekkSharedPreference(mContext);
-        mIndex = pref.getInt(URL_STORE_CURRENT_SIZE, 0);
+        mIndex.set(pref.getInt(URL_STORE_CURRENT_SIZE, 0));
         long sentURLFileOffset = pref.getLong(URL_STORE_SENDED_URL_OFSSET, -1);
-        WebtrekkLogging.log("read store size:"+mIndex);
+        WebtrekkLogging.log("read store size:"+mIndex.get());
 
-        for (int i = 0; i < mIndex; i++) {
+        for (int i = 0; i < mIndex.get(); i++) {
             mIDs.put(i, -1l);
         }
-        if (mIndex > 0) {
+        if (mIndex.get() > 0) {
             mIDs.put(0, sentURLFileOffset);
         }
     }
@@ -199,7 +200,7 @@ public class RequestUrlStore {
     {
         clearIds();
         mLoaddedIDs.clear();
-        mIndex = 0;
+        mIndex.set(0);
         mLatestSavedURLID = -1;
         deleteRequestsFile();
         writeFileAttributes();
@@ -263,8 +264,8 @@ public class RequestUrlStore {
      * @param requestUrl string representation of a tracking request
      */
     public void addURL(String requestUrl) {
-        mURLCache.put(mIndex, requestUrl);
-        mIDs.put(mIndex++, -1l);
+        mURLCache.put(mIndex.get(), requestUrl);
+        mIDs.put(mIndex.getAndIncrement(), -1l);
     }
 
     public int size()
