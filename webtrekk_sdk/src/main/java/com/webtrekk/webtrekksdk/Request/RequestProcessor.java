@@ -19,6 +19,7 @@
 package com.webtrekk.webtrekksdk.Request;
 
 import com.webtrekk.webtrekksdk.Utils.PinConnectionValidator;
+import com.webtrekk.webtrekksdk.Utils.Tls12SocketFactory;
 import com.webtrekk.webtrekksdk.Utils.WebtrekkLogging;
 
 import java.io.EOFException;
@@ -29,6 +30,10 @@ import java.net.URL;
 import java.net.UnknownHostException;
 
 import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+
+import static com.webtrekk.webtrekksdk.Utils.HelperFunctions.*;
+import static com.webtrekk.webtrekksdk.Webtrekk.isTls12Enabled;
 
 /**
  * this class sends the requests to the server
@@ -76,7 +81,21 @@ public class RequestProcessor implements Runnable {
      */
 
     public HttpsURLConnection getUrlConnection(URL url) throws IOException {
-        return (HttpsURLConnection) url.openConnection();
+
+        final HttpsURLConnection urlConnection = (HttpsURLConnection) url.openConnection();
+
+        if(isTls12Enabled() && isTls12Supported()) {
+            try {
+                SSLContext sc = SSLContext.getInstance("TLSv1.2");
+                sc.init(null, null, null);
+                urlConnection.setSSLSocketFactory(new Tls12SocketFactory(sc.getSocketFactory()));
+            }
+            catch (Exception e) {
+                WebtrekkLogging.log("RequestProcessor: No TLSv1.2 support.", e);
+            }
+        }
+
+        return urlConnection;
     }
 
     /**
