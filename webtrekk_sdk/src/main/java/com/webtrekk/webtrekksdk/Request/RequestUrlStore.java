@@ -45,8 +45,8 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * this class acts as a local storage for the url strings before the are send
- * it gets instantiated only once by the main webtrekk class
+ * this class acts as a local storage for the url strings before they are sent
+ * it gets instantiated only once by the main Webtrekk class
  */
 
 public class RequestUrlStore {
@@ -54,27 +54,26 @@ public class RequestUrlStore {
     final static private String FILE_NAME = "wt-tracking-requests";
     final private File mRequestStoreFile;
     final private LruCache<Integer, String> mURLCache;
-    //keys for current queu. Key can be point to not loaded URL
+    // keys for current queue. Key can be point to not loaded URL
     final private SortedMap<Integer, Long> mIDs = Collections.synchronizedSortedMap(new TreeMap<Integer, Long>());
     final int mReadGroupSize = 200;
-    final private Map<Integer, String> mLoaddedIDs = new HashMap<>(mReadGroupSize);
+    final private Map<Integer, String> mLoadedIDs = new HashMap<>(mReadGroupSize);
 
-    //Next string index
+    // Next string index
     private AtomicInteger mIndex = new AtomicInteger();
-    // current readed index in file
+    // current read index in file
     private volatile long mLatestSavedURLID = -1;
     private static String URL_STORE_CURRENT_SIZE = "URL_STORE_CURRENT_SIZE";
-    private static String URL_STORE_SENDED_URL_OFSSET = "URL_STORE_SENDED_URL_OFSSET";
+    private static String URL_STORE_SENT_URL_OFFSET = "URL_STORE_SENT_URL_OFFSET";
     final private Context mContext;
 
     /**
-     * constructs a new RequestlStore object
+     * constructs a new RequestUrlStore object
      *
      * @param context the application/activity context to find the cache dir
      */
     public RequestUrlStore(Context context) {
-
-        if(context == null) {
+        if (context == null) {
             throw new IllegalArgumentException("no valid context");
         }
 
@@ -83,7 +82,7 @@ public class RequestUrlStore {
 
         File fileInCash = new File(context.getCacheDir(), FILE_NAME);
 
-        if (fileInCash.exists() && !mRequestStoreFile.exists()){
+        if (fileInCash.exists() && !mRequestStoreFile.exists()) {
             fileInCash.renameTo(mRequestStoreFile);
         }
 
@@ -91,13 +90,11 @@ public class RequestUrlStore {
 
         final int maxSize = 20;
 
-        mURLCache = new LruCache<Integer, String>(maxSize){
+        mURLCache = new LruCache<Integer, String>(maxSize) {
             @Override
             protected void entryRemoved(boolean evicted, Integer key, final String oldValue, String newValue) {
-                if (evicted && oldValue != null)
-                {
-                    saveURLsToFile(new SaveURLAction(){
-
+                if (evicted && oldValue != null) {
+                    saveURLsToFile(new SaveURLAction() {
                         @Override
                         public void onSave(PrintWriter writer) {
                             writer.println(oldValue);
@@ -113,35 +110,33 @@ public class RequestUrlStore {
     private void initFileAttributes() {
         SharedPreferences pref = HelperFunctions.getWebTrekkSharedPreference(mContext);
         mIndex.set(pref.getInt(URL_STORE_CURRENT_SIZE, 0));
-        long sentURLFileOffset = pref.getLong(URL_STORE_SENDED_URL_OFSSET, -1);
-        WebtrekkLogging.log("read store size:"+mIndex.get());
+        long sentURLFileOffset = pref.getLong(URL_STORE_SENT_URL_OFFSET, -1);
+        WebtrekkLogging.log("read store size: " + mIndex.get());
 
         for (int i = 0; i < mIndex.get(); i++) {
             mIDs.put(i, -1l);
         }
+
         if (mIndex.get() > 0) {
             mIDs.put(0, sentURLFileOffset);
         }
     }
 
-    private void writeFileAttributes()
-    {
+    private void writeFileAttributes() {
         synchronized (mIDs) {
-            WebtrekkLogging.log("save store size:" + mIDs.size());
+            WebtrekkLogging.log("save store size: " + mIDs.size());
             SharedPreferences.Editor prefEdit = HelperFunctions.getWebTrekkSharedPreference(mContext).edit();
-            prefEdit.putLong(URL_STORE_SENDED_URL_OFSSET, mIDs.isEmpty() ? -1 : mIDs.get(mIDs.firstKey()));
+            prefEdit.putLong(URL_STORE_SENT_URL_OFFSET, mIDs.isEmpty() ? -1 : mIDs.get(mIDs.firstKey()));
             prefEdit.putInt(URL_STORE_CURRENT_SIZE, mIDs.size()).apply();
         }
     }
 
-    private interface SaveURLAction
-    {
+    private interface SaveURLAction {
         void onSave(PrintWriter writer);
     }
 
-    public void reset()
-    {
-        // reset only if class was removed
+    public void reset() {
+        // reset only if class is removed
         synchronized (mIDs) {
             if (mIDs.isEmpty()) {
                 initFileAttributes();
@@ -149,37 +144,33 @@ public class RequestUrlStore {
         }
     }
 
-    //Save URL to file
-    private void saveURLsToFile(SaveURLAction action)
-    {
+    // Save URL to file
+    private void saveURLsToFile(SaveURLAction action) {
         try {
             PrintWriter writer = new PrintWriter(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(mRequestStoreFile, true), "UTF-8")));
             try {
                 action.onSave(writer);
-            }
-            finally {
+            } finally {
                 writer.close();
             }
-        }
-        catch (UnsupportedEncodingException e) {
+        } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
-        }
-        catch (Exception e) {
-            WebtrekkLogging.log("can not save url", e);
+        } catch (Exception e) {
+            WebtrekkLogging.log("can not save url ", e);
         }
     }
 
     // flush to file all data, clear cache.
-    public void flush()
-    {
+    public void flush() {
         if (hasSpareIds()) {
             saveURLsToFile(new SaveURLAction() {
                 @Override
                 public void onSave(PrintWriter writer) {
                     synchronized (mIDs) {
                         for (Integer id : mIDs.keySet()) {
-                            if (id <= mLatestSavedURLID)
+                            if (id <= mLatestSavedURLID) {
                                 continue;
+                            }
 
                             String url = mURLCache.get(id);
                             if (url != null) {
@@ -196,18 +187,16 @@ public class RequestUrlStore {
         //dumpFile();
     }
 
-    public void clearAllTrackingData()
-    {
+    public void clearAllTrackingData() {
         clearIds();
-        mLoaddedIDs.clear();
+        mLoadedIDs.clear();
         mIndex.set(0);
         mLatestSavedURLID = -1;
         deleteRequestsFile();
         writeFileAttributes();
     }
 
-    private void clearIds()
-    {
+    private void clearIds() {
         synchronized (mIDs) {
             for (Integer id : mIDs.keySet()) {
                 mURLCache.remove(id);
@@ -218,42 +207,43 @@ public class RequestUrlStore {
     }
 
 
-    public String peek()
-    {
+    public String peek() {
         Integer id = getFirstId();
-        if (id == null)
+        if (id == null) {
             return null;
+        }
 
         String url = mURLCache.get(id);
         if (url == null) {
-            url = mLoaddedIDs.get(id);
+            url = mLoadedIDs.get(id);
             if (url == null) {
-                //not url in cash, get it from file
-                if (mLoaddedIDs.size() > 0)
-                    WebtrekkLogging.log("Something wrong with logic. mLoaddedIDs should be zero if url isn't found");
+                // not url in cache, get it from file
+                if (mLoadedIDs.size() > 0) {
+                    WebtrekkLogging.log("Something wrong with logic. mLoadedIDs should be zero if url isn't found");
+                }
 
                 Long mId = getValueById(id);
                 if (isURLFileExists() && mId != null) {
-                    if (loadRequestsFromFile(mReadGroupSize, mId, id))
-                        url = mLoaddedIDs.get(id);
-                    else // file is corrupted or missed
-                    {
-                        deleteAllCashedIDs();
+                    if (loadRequestsFromFile(mReadGroupSize, mId, id)) {
+                        url = mLoadedIDs.get(id);
+                    } else { // file is corrupted or missed
+                        deleteAllCachedIDs();
                         return mURLCache.get(id);
                     }
-                } else
-                    WebtrekkLogging.log("NO url in cache, but file doesn't exists as well. Some issue here");
+                } else {
+                    WebtrekkLogging.log("No url in cache, but file doesn't exist as well. Some issue here");
+                }
             }
         }
 
-        if (url == null)
-            WebtrekkLogging.log("Can't get URL something wrong. ID:"+id);
+        if (url == null) {
+            WebtrekkLogging.log("Can't get URL something wrong. ID: " + id);
+        }
 
         return url;
     }
 
-    private boolean isURLFileExists()
-    {
+    private boolean isURLFileExists() {
         return mRequestStoreFile.exists();
     }
 
@@ -268,8 +258,7 @@ public class RequestUrlStore {
         mIDs.put(mIndex.getAndIncrement(), -1l);
     }
 
-    public int size()
-    {
+    public int size() {
         synchronized (mIDs) {
             return mIDs.size();
         }
@@ -303,12 +292,13 @@ public class RequestUrlStore {
         return null;
     }
 
-    private void removeKey(int key)
-    {
+    private void removeKey(int key) {
         synchronized (mIDs) {
             if (mIDs.containsKey(key)) {
-                if (mLoaddedIDs.remove(key) == null)
+                if (mLoadedIDs.remove(key) == null) {
                     mURLCache.remove(key);
+                }
+
                 mIDs.remove(key);
             }
         }
@@ -320,25 +310,23 @@ public class RequestUrlStore {
                 return false;
             }
 
-            WebtrekkLogging.log("Flush items to memory. Size:" + mIDs.size() + " latest saved URL ID:" + mLatestSavedURLID + " latest IDS:" + mIDs.lastKey());
+            WebtrekkLogging.log("Flush items to memory. Size: " + mIDs.size() + " latest saved URL ID: " + mLatestSavedURLID + " latest IDS: " + mIDs.lastKey());
             return mLatestSavedURLID < mIDs.lastKey();
         }
     }
 
-    private void dumpFile()
-    {
+    private void dumpFile() {
         BufferedReader reader = null;
         try {
             reader = new BufferedReader(new InputStreamReader(new FileInputStream(mRequestStoreFile), "UTF-8"));
 
             WebtrekkLogging.log("Dump flushed file start ------------------------------------------------");
             String line;
-            while ((line = reader.readLine()) != null){
+            while ((line = reader.readLine()) != null) {
                 WebtrekkLogging.log(line);
             }
             WebtrekkLogging.log("Dump flushed file end --------------------------------------------------");
-            WebtrekkLogging.log("IDS:" + Arrays.asList(mIDs).toString());
-
+            WebtrekkLogging.log("IDS: " + Arrays.asList(mIDs).toString());
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         } catch (FileNotFoundException e) {
@@ -353,7 +341,6 @@ public class RequestUrlStore {
      * loads the requests from the cache file if present
      */
     private boolean loadRequestsFromFile(int numbersToLoad, Long startOffset, int firstID) {
-
         int id = firstID;
         long offset = startOffset < 0 ? 0 : startOffset;
 
@@ -363,22 +350,24 @@ public class RequestUrlStore {
             try {
                 String line;
                 int ind = 0;
-                //set offset for first id
+                // set offset for first id
                 mIDs.put(id, offset);
                 while ((line = reader.readLine()) != null && ind++ < numbersToLoad && mURLCache.get(id) == null) {
-                    if (getValueById(id) == null)
-                        WebtrekkLogging.log("File is more then existed keys. Error. Key:" + id + " offset:" + offset);
-                    //put URL and increment id
-                    mLoaddedIDs.put(id++, line);
+                    if (getValueById(id) == null) {
+                        WebtrekkLogging.log("File is more than existed keys. Error. Key: " + id + " offset: " + offset);
+                        return false;
+                    }
+                    // put URL and increment id
+                    mLoadedIDs.put(id++, line);
                     offset += (line.length() + System.getProperty("line.separator").length());
-                    //set offset of next id if exists
-                    if (getValueById(id)!= null && (mLatestSavedURLID >= id || mLatestSavedURLID == -1) )
+                    // set offset of next id if exists
+                    if (getValueById(id) != null && (mLatestSavedURLID >= id || mLatestSavedURLID == -1)) {
                         mIDs.put(id, offset);
+                    }
                 }
             } finally {
                 reader.close();
             }
-
         } catch (Exception e) {
             WebtrekkLogging.log("cannot load backup file '" + mRequestStoreFile.getAbsolutePath() + "'", e);
             return false;
@@ -387,19 +376,22 @@ public class RequestUrlStore {
         return true;
     }
 
-    private void deleteAllCashedIDs()
-    {
-        while(true)
-        {
+    private void deleteAllCachedIDs() {
+        while (true) {
             Integer id = getFirstId();
-            if (id == null) return;
+            if (id == null) {
+                return;
+            }
+
             String url = mURLCache.get(id);
             if (url == null) {
-                url = mLoaddedIDs.get(id);
-                if (url == null)
+                url = mLoadedIDs.get(id);
+                if (url == null) {
                     removeKey(id);
-            } else
+                }
+            } else {
                 break;
+            }
         }
     }
 
@@ -407,9 +399,10 @@ public class RequestUrlStore {
      * this method removes the old cache file, it should be called after the requests are loaded into the store
      */
     public void deleteRequestsFile() {
-        WebtrekkLogging.log("deleting old backupfile");
-        if (!isURLFileExists())
+        WebtrekkLogging.log("deleting old backup file");
+        if (!isURLFileExists()) {
             return;
+        }
 
         if (size() != 0) {
             WebtrekkLogging.log("still items to send. Error delete URL request File");
@@ -417,7 +410,7 @@ public class RequestUrlStore {
         }
 
         boolean success = mRequestStoreFile.delete();
-        if(success) {
+        if (success) {
             WebtrekkLogging.log("old backup file deleted");
         } else {
             WebtrekkLogging.log("error deleting old backup file");
@@ -428,6 +421,7 @@ public class RequestUrlStore {
 
     /**
      * for unit testing only
+     *
      * @return
      */
     public File getRequestStoreFile() {
