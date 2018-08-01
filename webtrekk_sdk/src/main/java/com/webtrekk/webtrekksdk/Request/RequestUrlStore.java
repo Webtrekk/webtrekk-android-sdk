@@ -292,6 +292,12 @@ public class RequestUrlStore {
         return null;
     }
 
+    private void addToMap(int key, long value) {
+        synchronized (mIDs) {
+            mIDs.put(key, value);
+        }
+    }
+
     private void removeKey(int key) {
         synchronized (mIDs) {
             if (mIDs.containsKey(key)) {
@@ -351,7 +357,7 @@ public class RequestUrlStore {
                 String line;
                 int ind = 0;
                 // set offset for first id
-                mIDs.put(id, offset);
+                addToMap(id, offset);
                 while ((line = reader.readLine()) != null && ind++ < numbersToLoad && mURLCache.get(id) == null) {
                     if (getValueById(id) == null) {
                         WebtrekkLogging.log("File is more than existed keys. Error. Key: " + id + " offset: " + offset);
@@ -362,7 +368,7 @@ public class RequestUrlStore {
                     offset += (line.length() + System.getProperty("line.separator").length());
                     // set offset of next id if exists
                     if (getValueById(id) != null && (mLatestSavedURLID >= id || mLatestSavedURLID == -1)) {
-                        mIDs.put(id, offset);
+                        addToMap(id, offset);
                     }
                 }
             } finally {
