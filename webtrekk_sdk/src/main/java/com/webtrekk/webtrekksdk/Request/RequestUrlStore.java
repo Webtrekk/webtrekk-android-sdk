@@ -109,11 +109,10 @@ public class RequestUrlStore {
 
     private synchronized void initFileAttributes() {
         SharedPreferences pref = HelperFunctions.getWebTrekkSharedPreference(mContext);
-        mIndex = pref.getInt(URL_STORE_CURRENT_SIZE, 0);
+        int index = mIndex = pref.getInt(URL_STORE_CURRENT_SIZE, 0);
         long sentURLFileOffset = pref.getLong(URL_STORE_SENT_URL_OFFSET, -1);
         WebtrekkLogging.log("read store size: " + mIndex);
 
-        int index = mIndex;
         for (int i = 0; i < index; i++) {
             mIDs.put(i, -1l);
         }
@@ -371,7 +370,7 @@ public class RequestUrlStore {
                     mLoadedIDs.put(id++, line);
                     offset += (line.length() + System.getProperty("line.separator").length());
                     // set offset of next id if exists
-                    if (mIDs.get(id) != null && (mLatestSavedURLID >= id || mLatestSavedURLID == -1)) {
+                    if (mLatestSavedURLID >= id || mLatestSavedURLID == -1) {
                         addToMap(id, offset);
                     }
                 }
