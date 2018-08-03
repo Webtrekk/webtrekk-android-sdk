@@ -40,9 +40,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * this class acts as a local storage for the url strings before they are sent
@@ -60,7 +60,7 @@ public class RequestUrlStore {
     final private Map<Integer, String> mLoadedIDs = new HashMap<>(mReadGroupSize);
 
     // Next string index
-    private AtomicInteger mIndex = new AtomicInteger();
+    private int mIndex;
     // current read index in file
     private volatile long mLatestSavedURLID = -1;
     private static String URL_STORE_CURRENT_SIZE = "URL_STORE_CURRENT_SIZE";
@@ -107,17 +107,18 @@ public class RequestUrlStore {
         };
     }
 
-    private void initFileAttributes() {
+    private synchronized void initFileAttributes() {
         SharedPreferences pref = HelperFunctions.getWebTrekkSharedPreference(mContext);
-        mIndex.set(pref.getInt(URL_STORE_CURRENT_SIZE, 0));
+        mIndex = pref.getInt(URL_STORE_CURRENT_SIZE, 0);
         long sentURLFileOffset = pref.getLong(URL_STORE_SENT_URL_OFFSET, -1);
-        WebtrekkLogging.log("read store size: " + mIndex.get());
+        WebtrekkLogging.log("read store size: " + mIndex);
 
-        for (int i = 0; i < mIndex.get(); i++) {
+        int index = mIndex;
+        for (int i = 0; i < index; i++) {
             mIDs.put(i, -1l);
         }
 
-        if (mIndex.get() > 0) {
+        if (index > 0) {
             mIDs.put(0, sentURLFileOffset);
         }
     }
@@ -166,8 +167,10 @@ public class RequestUrlStore {
             saveURLsToFile(new SaveURLAction() {
                 @Override
                 public void onSave(PrintWriter writer) {
+                    Set<Integer> mIDsKeySet = mIDs.keySet();
+                    // Intrinsic locking of mIDs
                     synchronized (mIDs) {
-                        for (Integer id : mIDs.keySet()) {
+                        for (Integer id : mIDsKeySet) {
                             if (id <= mLatestSavedURLID) {
                                 continue;
                             }
@@ -190,15 +193,16 @@ public class RequestUrlStore {
     public void clearAllTrackingData() {
         clearIds();
         mLoadedIDs.clear();
-        mIndex.set(0);
+        mIndex = 0;
         mLatestSavedURLID = -1;
         deleteRequestsFile();
         writeFileAttributes();
     }
 
     private void clearIds() {
+        Set<Integer> mIDsKeySet = mIDs.keySet();
         synchronized (mIDs) {
-            for (Integer id : mIDs.keySet()) {
+            for (Integer id : mIDsKeySet) {
                 mURLCache.remove(id);
             }
 
@@ -254,8 +258,8 @@ public class RequestUrlStore {
      * @param requestUrl string representation of a tracking request
      */
     public void addURL(String requestUrl) {
-        mURLCache.put(mIndex.get(), requestUrl);
-        mIDs.put(mIndex.getAndIncrement(), -1l);
+        mURLCache.put(mIndex, requestUrl);
+        addToMap(mIndex++, -1l);
     }
 
     public int size() {
@@ -367,7 +371,7 @@ public class RequestUrlStore {
                     mLoadedIDs.put(id++, line);
                     offset += (line.length() + System.getProperty("line.separator").length());
                     // set offset of next id if exists
-                    if (getValueById(id) != null && (mLatestSavedURLID >= id || mLatestSavedURLID == -1)) {
+                    if (mIDs.get(id) != null && (mLatestSavedURLID >= id || mLatestSavedURLID == -1)) {
                         addToMap(id, offset);
                     }
                 }
