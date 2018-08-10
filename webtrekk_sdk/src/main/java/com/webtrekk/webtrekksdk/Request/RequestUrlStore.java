@@ -122,7 +122,7 @@ public class RequestUrlStore {
         }
     }
 
-    private synchronized void writeFileAttributes() {
+    private void writeFileAttributes() {
         synchronized (mIDs) {
             WebtrekkLogging.log("save store size: " + mIDs.size());
             SharedPreferences.Editor prefEdit = HelperFunctions.getWebTrekkSharedPreference(mContext).edit();
