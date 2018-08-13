@@ -107,18 +107,20 @@ public class RequestUrlStore {
         };
     }
 
-    private synchronized void initFileAttributes() {
-        SharedPreferences pref = HelperFunctions.getWebTrekkSharedPreference(mContext);
-        int index = mIndex = pref.getInt(URL_STORE_CURRENT_SIZE, 0);
-        long sentURLFileOffset = pref.getLong(URL_STORE_SENT_URL_OFFSET, -1);
-        WebtrekkLogging.log("read store size: " + index);
+    private void initFileAttributes() {
+        synchronized (mIDs) {
+            SharedPreferences pref = HelperFunctions.getWebTrekkSharedPreference(mContext);
+            int index = mIndex = pref.getInt(URL_STORE_CURRENT_SIZE, 0);
+            long sentURLFileOffset = pref.getLong(URL_STORE_SENT_URL_OFFSET, -1);
+            WebtrekkLogging.log("read store size: " + index);
 
-        for (int i = 0; i < index; i++) {
-            mIDs.put(i, -1l);
-        }
+            for (int i = 0; i < index; i++) {
+                mIDs.put(i, -1l);
+            }
 
-        if (index > 0) {
-            mIDs.put(0, sentURLFileOffset);
+            if (index > 0) {
+                mIDs.put(0, sentURLFileOffset);
+            }
         }
     }
 
@@ -166,9 +168,8 @@ public class RequestUrlStore {
             saveURLsToFile(new SaveURLAction() {
                 @Override
                 public void onSave(PrintWriter writer) {
-                    Set<Integer> mIDsKeySet = mIDs.keySet();
-                    // Intrinsic locking of mIDs
                     synchronized (mIDs) {
+                        Set<Integer> mIDsKeySet = mIDs.keySet();
                         for (Integer id : mIDsKeySet) {
                             if (id <= mLatestSavedURLID) {
                                 continue;
@@ -199,8 +200,8 @@ public class RequestUrlStore {
     }
 
     private void clearIds() {
-        Set<Integer> mIDsKeySet = mIDs.keySet();
         synchronized (mIDs) {
+            Set<Integer> mIDsKeySet = mIDs.keySet();
             for (Integer id : mIDsKeySet) {
                 mURLCache.remove(id);
             }
