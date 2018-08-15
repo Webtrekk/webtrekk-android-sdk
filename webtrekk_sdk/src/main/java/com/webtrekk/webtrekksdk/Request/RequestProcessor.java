@@ -48,13 +48,6 @@ public class RequestProcessor implements Runnable {
         void process(int statusCode, HttpsURLConnection connection);
     }
 
-    // default requestProcessor
-    public RequestProcessor(RequestUrlStore requestUrlStore) {
-        mRequestUrlStore = requestUrlStore;
-        mValidator = null;
-    }
-
-    // requestProcessor with PinConnection that was added later
     public RequestProcessor(RequestUrlStore requestUrlStore, PinConnectionValidator validator) {
         mRequestUrlStore = requestUrlStore;
         mValidator = validator;
