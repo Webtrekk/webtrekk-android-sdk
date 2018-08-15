@@ -576,6 +576,14 @@ final public class HelperFunctions {
         return builder.toString();
     }
 
+    // Devices from API level 16 (Jelly Bean) on support TLSv1.2, but it's not enabled per default
+    // see https://developer.android.com/reference/javax/net/ssl/SSLContext
+    public static boolean isTls12Supported() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN &&
+                Build.VERSION.SDK_INT <= Build.VERSION_CODES.LOLLIPOP;
+
+    }
+
     public String getXmlFromUrl(String url) throws IOException {
         String xml = null;
         // defaultHttpClient

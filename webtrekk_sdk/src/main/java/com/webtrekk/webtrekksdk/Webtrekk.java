@@ -73,12 +73,12 @@ public class Webtrekk implements ActivityListener.Callback {
     private ProductListTracker mProductListTracker;
     private boolean mIsInitialized;
 
+    private static boolean tls12Enabled;
 
     /**
      * non public constructor to create a Webtrekk Instance as
      * makes use of the Singleton Pattern here.
      */
-
     Webtrekk() {
     }
 
@@ -325,6 +325,14 @@ public class Webtrekk implements ActivityListener.Callback {
      */
     public static void setLoggingEnabled(boolean logging) {
         WebtrekkLogging.setIsLogging(logging);
+    }
+
+    public static boolean isTls12Enabled() {
+        return tls12Enabled;
+    }
+
+    public static void setTls12Enabled(boolean tls12Enabled) {
+        Webtrekk.tls12Enabled = tls12Enabled;
     }
 
     public boolean isSampling() {
