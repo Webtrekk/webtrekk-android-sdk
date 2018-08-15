@@ -48,6 +48,10 @@ public class RequestProcessor implements Runnable {
         void process(int statusCode, HttpsURLConnection connection);
     }
 
+    public RequestProcessor(RequestUrlStore requestUrlStore) {
+        this(requestUrlStore, null);
+    }
+
     public RequestProcessor(RequestUrlStore requestUrlStore, PinConnectionValidator validator) {
         mRequestUrlStore = requestUrlStore;
         mValidator = validator;

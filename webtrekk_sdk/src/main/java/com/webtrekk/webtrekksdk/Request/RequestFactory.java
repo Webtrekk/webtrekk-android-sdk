@@ -104,6 +104,9 @@ public class RequestFactory {
     private ScheduledExecutorService mFlashTimerService;
     private ScheduledFuture<?> mFlashTimerFuture;
 
+    public void init(Context context, TrackingConfiguration trackingConfiguration, Webtrekk wt) {
+        init(context, trackingConfiguration, wt, null);
+    }
 
     public void init(Context context, TrackingConfiguration trackingConfiguration, Webtrekk wt, Set<String> validPins)
     {
