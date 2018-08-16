@@ -25,10 +25,10 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Build;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.content.LocalBroadcastManager;
-import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
@@ -41,7 +41,6 @@ import android.widget.TextView;
 
 import com.webtrekk.SDKTest.ProductList.ProductListActivity;
 import com.webtrekk.webtrekksdk.Webtrekk;
-import com.mixpanel.android.mpmetrics.MixpanelAPI;
 
 import java.util.List;
 
@@ -98,7 +97,6 @@ public class MainActivity extends AppCompatActivity {
         permissionRequest(permissions, permissionsUI, runnables);
 
         ((TextView)findViewById(R.id.main_version)).setText(getString(R.string.hello_world) + "\nLibrary Version:" + Webtrekk.mTrackingLibraryVersionUI);
-        MixpanelAPI mixpanel = MixpanelAPI.getInstance(this, "9e956a2e5169ddb44eb87b6acb0eee95");
         updateAdClearCaption();
     }
 

@@ -39,7 +39,6 @@ configurations.all {
 dependencies {
     implementation (project(':webtrekk_sdk'))
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'com.mixpanel.android:mixpanel-android:4.8.0'
     implementation 'com.google.android.gms:play-services-ads:11.6.2'
     implementation 'com.android.support:recyclerview-v7:27.0.1'
     implementation 'com.android.support:appcompat-v7:27.0.1'
