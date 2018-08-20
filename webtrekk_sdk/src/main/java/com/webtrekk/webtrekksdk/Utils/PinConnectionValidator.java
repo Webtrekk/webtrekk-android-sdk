@@ -103,7 +103,7 @@ public class PinConnectionValidator {
             };
         }
 
-        // Implement for other versions
+        // Implement for other versions below API 17
         return new TrustChecker() {
             @Override
             public List<X509Certificate> checkServerTrusted(
