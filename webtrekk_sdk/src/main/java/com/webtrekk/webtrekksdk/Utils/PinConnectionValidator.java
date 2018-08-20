@@ -1,5 +1,6 @@
 package com.webtrekk.webtrekksdk.Utils;
 
+import android.annotation.TargetApi;
 import android.net.http.X509TrustManagerExtensions;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -93,6 +94,7 @@ public class PinConnectionValidator {
                 X509TrustManagerExtensions extensions = new X509TrustManagerExtensions(finalX509TrustManager);
 
                 @Override
+                @TargetApi(17)
                 public List<X509Certificate> checkServerTrusted(
                         X509Certificate[] chain, String authType, String host)
                         throws CertificateException {
@@ -101,12 +103,17 @@ public class PinConnectionValidator {
             };
         }
 
-        // Implement for other versions
+        // Implement for other versions below API 17
         return new TrustChecker() {
             @Override
             public List<X509Certificate> checkServerTrusted(
                     X509Certificate[] chain, String authType, String host) throws CertificateException {
-                throw new CertificateException("No valid certificate checker");
+                try {
+                    finalX509TrustManager.checkServerTrusted(chain, authType);
+                    return Arrays.asList(chain);
+                } catch (CertificateException | NullPointerException e) {
+                    throw new CertificateException("No valid certificate checker");
+                }
             }
         };
     }
