@@ -308,7 +308,7 @@ public class TrackingRequest {
 
         @Override
         public String getBasePart() {
-            return "http://appinstall.webtrekk.net/appinstall/v1/install?";
+            return "https://appinstall.webtrekk.net/appinstall/v1/install?";
         }
 
         @Override
