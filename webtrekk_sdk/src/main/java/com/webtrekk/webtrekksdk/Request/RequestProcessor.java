@@ -121,7 +121,9 @@ public class RequestProcessor implements Runnable {
             connection.setReadTimeout(NETWORK_READ_TIMEOUT);
             connection.setUseCaches(false);
             connection.connect();
-            mValidator.validatePinning(connection);
+            if (mValidator != null) {
+                mValidator.validatePinning(connection);
+            }
             int statusCode = connection.getResponseCode();
 
             if (processOutput != null)

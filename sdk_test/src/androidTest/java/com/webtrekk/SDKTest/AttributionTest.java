@@ -42,8 +42,6 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 
-import static java.lang.Thread.sleep;
-
 public class AttributionTest extends WebtrekkBaseSDKTest {
 
     volatile String mAdvID;
@@ -75,13 +73,13 @@ public class AttributionTest extends WebtrekkBaseSDKTest {
     @Test
     public void testAttributionRunLinkWithAdID()
     {
-        launchClickID("http://appinstall.webtrekk.net/appinstall/v1/redirect?mc="+MEDIA_CODE+"&trackid=&as1=market%3A//details%3Fid%3Dcom.Webtrekk.SDKTest&aid=", true);
+        launchClickID("https://appinstall.webtrekk.net/appinstall/v1/redirect?mc="+MEDIA_CODE+"&trackid=&as1=market%3A//details%3Fid%3Dcom.Webtrekk.SDKTest&aid=", true);
     }
 
     @Test
     public void testAttributionRunLinkWithoutAdID()
     {
-        launchClickID("http://appinstall.webtrekk.net/appinstall/v1/redirect?mc="+MEDIA_CODE+"&trackid=&as1=market%3A//details%3Fid%3Dcom.Webtrekk.SDKTest", false);
+        launchClickID("https://appinstall.webtrekk.net/appinstall/v1/redirect?mc="+MEDIA_CODE+"&trackid=&as1=market%3A//details%3Fid%3Dcom.Webtrekk.SDKTest", false);
     }
 
     private String[] getFileList(final String contains)

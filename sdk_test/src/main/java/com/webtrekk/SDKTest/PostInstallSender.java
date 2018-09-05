@@ -75,7 +75,7 @@ public class PostInstallSender {
     private String getRequest(@NonNull String mediaCode, @Nullable String advId){
         Webtrekk wt = Webtrekk.getInstance();
         SharedPreferences preferences = HelperFunctions.getWebTrekkSharedPreference(applicationContext);
-        return "http://appinstall.webtrekk.net/appinstall/v1/postback?trackid="+
+        return "https://appinstall.webtrekk.net/appinstall/v1/postback?trackid="+
                 wt.getTrackingIDs().get(0)+"&mc="+mediaCode+"&app_name=null" +
                 (advId == null ? "" : "&aid=" + advId);
     }
