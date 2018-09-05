@@ -21,9 +21,6 @@ package com.webtrekk.webtrekksdk.Request;
 
 import android.support.annotation.NonNull;
 
-import java.util.Map;
-import java.util.SortedMap;
-
 import com.webtrekk.webtrekksdk.Configuration.TrackingConfiguration;
 import com.webtrekk.webtrekksdk.TrackingParameter;
 import com.webtrekk.webtrekksdk.TrackingParameter.Parameter;
@@ -33,6 +30,9 @@ import com.webtrekk.webtrekksdk.Webtrekk;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.util.Map;
+import java.util.SortedMap;
 
 
 /**
@@ -467,7 +467,7 @@ public class TrackingRequest {
 
         @Override
         public String getBasePart() {
-            return "http://appinstall.webtrekk.net/appinstall/v1/install?";
+            return "https://appinstall.webtrekk.net/appinstall/v1/install?";
         }
 
         @Override
