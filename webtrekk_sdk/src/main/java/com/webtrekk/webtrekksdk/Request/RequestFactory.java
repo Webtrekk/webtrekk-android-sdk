@@ -478,6 +478,9 @@ public class RequestFactory {
         //add the internal parameter
         trackingParameter.add(mInternalParameter);
 
+        // update the dynamic parameter which change with every request
+        updateDynamicParameter();
+
         // action params are a special case, no other params but the ones given as parameter in the code
         if(tp.containsKey(Parameter.ACTION_NAME)) {
             applyActivityConfiguration(trackingParameter, true);
@@ -499,8 +502,6 @@ public class RequestFactory {
             return new TrackingRequest(trackingParameter, mTrackingConfiguration);
         }
 
-        // update the dynamic parameter which change with every request
-        updateDynamicParameter();
         // add the default parameter
         trackingParameter.add(mWebtrekkParameter);
 
