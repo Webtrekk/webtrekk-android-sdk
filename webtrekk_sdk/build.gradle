@@ -94,11 +94,10 @@ publishing {
 }
 android {
     compileSdkVersion COMPILE_SDK_VERSION as int
-    buildToolsVersion BUILD_TOOLS_VERSION as String
 
     defaultConfig {
         minSdkVersion MIN_SDK_VERSION as int
-        targetSdkVersion 22
+        targetSdkVersion 28
     }
     buildTypes {
         println("current version in gradle:"+version)
@@ -113,7 +112,6 @@ android {
     }
 
     defaultPublishConfig 'release'
-    buildToolsVersion '26.0.2'
 }
 
 
@@ -252,6 +250,6 @@ bintray {
             }
         }
     }
-bintrayUpload.dependsOn install
-install.dependsOn "assembleRelease"
+    bintrayUpload.dependsOn install
+    install.dependsOn "assembleRelease"
 }
