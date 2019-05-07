@@ -1,5 +1,7 @@
 # Webtrekk Android SDK
 
+Please refer to [Webtrekk Android SDK V5](https://github.com/Webtrekk/webtrekk-android-sdk-BETA) for latest development, features and better performance.
+
 The Webtrekk SDK allows you to track user activities, screen flow and media usage for an App. All data is send to the Webtrekk tracking system for further analysis.
 
 ## Getting Started
