@@ -1,8 +1,8 @@
 buildscript {
     ext.kotlin_version=KOTLIN_VERSION as String
     repositories {
-        jcenter()
         google()
+        jcenter()
     }
 
     dependencies {
@@ -15,13 +15,14 @@ buildscript {
 
 allprojects {
     repositories {
+        google()
         jcenter()
     }
 }
 
 subprojects { project ->
     repositories {
-        jcenter()
         google()
+        jcenter()
     }
 }
