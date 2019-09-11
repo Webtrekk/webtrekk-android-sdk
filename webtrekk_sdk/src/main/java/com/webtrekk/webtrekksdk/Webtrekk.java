@@ -819,6 +819,11 @@ public class Webtrekk implements ActivityListener.Callback {
         }
     }
 
+    @JavascriptInterface
+    public String getUserAgent(){
+        return HelperFunctions.getUserAgent();
+    }
+
     /**
      * @hide
      * @return
