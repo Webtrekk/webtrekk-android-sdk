@@ -779,6 +779,11 @@ public class Webtrekk implements ActivityListener.Callback {
         public String getEverId(){
             return HelperFunctions.getEverId(mContext);
         }
+
+        @JavascriptInterface
+        public String getUserAgent(){
+            return HelperFunctions.getUserAgent();
+        }
     }
 
     /**
